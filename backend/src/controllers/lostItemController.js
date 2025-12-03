@@ -111,8 +111,31 @@ exports.updateLostItem = async (req, res) => {
       });
     }
 
-    // Update fields
-    Object.assign(lostItem, req.body);
+    // Students can only update certain fields, not status or system fields
+    const allowedFields = [
+      'itemName',
+      'description',
+      'category',
+      'color',
+      'dateLost',
+      'locationLost',
+      'campus',
+      'phone',
+      'features',
+      'priority',
+      'images'
+    ];
+
+    // Filter out fields that students cannot update
+    const updateData = {};
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    });
+
+    // Update only allowed fields
+    Object.assign(lostItem, updateData);
     await lostItem.save();
 
     res.status(200).json({

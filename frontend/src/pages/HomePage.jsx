@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { FiPackage, FiSearch, FiTrendingUp, FiBarChart2, FiPlus } from 'react-icons/fi';
 import AnimatedBackground from '../components/common/AnimatedBackground';
+import StudentStats from '../components/common/StudentStats';
 
 const HomePage = () => {
   const { user } = useAuth();
@@ -100,6 +101,12 @@ const HomePage = () => {
           Hệ thống tìm kiếm đồ thất lạc FPTU
         </p>
       </div>
+
+      {user?.role === 'student' && (
+        <div className="student-stats-section">
+          <StudentStats />
+        </div>
+      )}
 
       <div className="quick-actions-enhanced">
         {actionCards.map((card, index) => {

@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
 import LostItemsPage from './pages/LostItemsPage';
+import LostItemDetailPage from './pages/LostItemDetailPage';
 import FoundItemsPage from './pages/FoundItemsPage';
 import SearchFoundItemsPage from './pages/SearchFoundItemsPage';
 import MatchingPage from './pages/MatchingPage';
@@ -49,6 +50,15 @@ const AppContent = () => {
                 element={
                   <ProtectedRoute>
                     <LostItemsPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/lost-items/:id"
+                element={
+                  <ProtectedRoute>
+                    <LostItemDetailPage />
                   </ProtectedRoute>
                 }
               />
