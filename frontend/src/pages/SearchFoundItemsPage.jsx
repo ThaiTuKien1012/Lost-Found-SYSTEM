@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useFetch } from '../hooks/useFetch';
 import { gsap } from 'gsap';
 import foundItemService from '../api/foundItemService';
 import AnimatedBackground from '../components/common/AnimatedBackground';
@@ -20,6 +19,11 @@ const SearchFoundItemsPage = () => {
   const searchRef = useRef(null);
   const itemsRef = useRef([]);
 
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+
   // Debounce search keyword for better UX
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -29,28 +33,81 @@ const SearchFoundItemsPage = () => {
     return () => clearTimeout(timer);
   }, [keyword]);
 
-  const { data, loading, error } = useFetch(
-    () => {
-      // Only search if searchParams is set (user clicked search or changed filters)
-      if (Object.keys(searchParams).length > 0) {
-        return foundItemService.searchFoundItems(
+  // Auto load all found items on initial mount (only once)
+  useEffect(() => {
+    if (!isInitialized) {
+      // Set initial search params to trigger first fetch
+      setSearchParams({ keyword: '', category: '', campus: '' });
+      setIsInitialized(true);
+    }
+  }, []); // Empty dependency array - only run once
+
+  // Fetch data when searchParams or page changes
+  useEffect(() => {
+    if (!isInitialized) return; // Don't fetch until initialized
+
+    let isCancelled = false;
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const result = await foundItemService.searchFoundItems(
           searchParams.keyword || '', 
           { 
             category: searchParams.category || '', 
             campus: searchParams.campus || '',
-            status: 'unclaimed' // Only show unclaimed items
+            status: 'unclaimed' // Only show unclaimed items (chưa được nhận)
           }, 
           page, 
           20
         );
-      }
-      // Return empty result on initial load
-      return Promise.resolve({ success: true, data: [], pagination: { total: 0, page: 1, pages: 0 } });
-    },
-    [searchParams, page]
-  );
 
+        if (isCancelled) return;
+
+        if (result && result.success !== false) {
+          // Ensure result has data structure
+          setData({
+            success: true,
+            data: result.data || result.items || [],
+            pagination: result.pagination || { total: 0, page: 1, pages: 0 }
+          });
+        } else {
+          setError(result?.error || 'Tìm kiếm thất bại');
+          setData({
+            success: false,
+            data: [],
+            pagination: { total: 0, page: 1, pages: 0 }
+          });
+        }
+      } catch (err) {
+        if (isCancelled) return;
+        console.error('Search error:', err);
+        setError(err.message || 'Có lỗi xảy ra khi tìm kiếm');
+        setData({
+          success: false,
+          data: [],
+          pagination: { total: 0, page: 1, pages: 0 }
+        });
+      } finally {
+        if (!isCancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [searchParams.keyword, searchParams.category, searchParams.campus, page, isInitialized]);
+
+  // Animation effects - only run on mount and when data changes
   useEffect(() => {
+    if (!titleRef.current || !searchRef.current) return;
+
     const tl = gsap.timeline();
     
     tl.fromTo(titleRef.current,
@@ -62,30 +119,49 @@ const SearchFoundItemsPage = () => {
       { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
       '-=0.3'
     );
+  }, []); // Only run once on mount
 
-    if (data?.data && itemsRef.current.length > 0) {
-      gsap.fromTo(itemsRef.current,
-        { opacity: 0, y: 50, rotationX: -90 },
-        { 
-          opacity: 1, 
-          y: 0, 
-          rotationX: 0, 
-          duration: 0.5, 
-          stagger: 0.1,
-          ease: 'power3.out' 
-        },
-        '-=0.2'
-      );
+  // Reset itemsRef when data changes
+  useEffect(() => {
+    itemsRef.current = [];
+  }, [data]);
+
+  // Animate items when data changes
+  useEffect(() => {
+    if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
+      // Wait for DOM to update
+      setTimeout(() => {
+        const validRefs = itemsRef.current.filter(ref => ref !== null && ref !== undefined);
+        if (validRefs.length > 0) {
+          gsap.fromTo(validRefs,
+            { opacity: 0, y: 50, rotationX: -90 },
+            { 
+              opacity: 1, 
+              y: 0, 
+              rotationX: 0, 
+              duration: 0.5, 
+              stagger: 0.1,
+              ease: 'power3.out' 
+            },
+            '-=0.2'
+          );
+        }
+      }, 100);
     }
   }, [data]);
 
   const handleSearch = (e) => {
-    e.preventDefault();
-    setSearchParams({ keyword: debouncedKeyword || keyword, category, campus });
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    // Use current keyword value directly (not debounced) when user explicitly searches
+    const searchKeyword = keyword.trim();
+    setSearchParams({ keyword: searchKeyword, category, campus });
     setPage(1);
   };
 
-  // Auto search when category or campus changes (but not on initial load)
+  // Auto search when category or campus changes
   const handleFilterChange = (filterType, value) => {
     if (filterType === 'category') {
       setCategory(value);
@@ -93,15 +169,13 @@ const SearchFoundItemsPage = () => {
       setCampus(value);
     }
     
-    // Only trigger search if user has already searched before
-    if (Object.keys(searchParams).length > 0) {
-      setSearchParams({ 
-        keyword: searchParams.keyword || debouncedKeyword || keyword, 
-        category: filterType === 'category' ? value : category,
-        campus: filterType === 'campus' ? value : campus
-      });
-      setPage(1);
-    }
+    // Trigger search immediately when filter changes
+    setSearchParams({ 
+      keyword: searchParams.keyword || debouncedKeyword || keyword, 
+      category: filterType === 'category' ? value : category,
+      campus: filterType === 'campus' ? value : campus
+    });
+    setPage(1);
   };
 
   const handleViewDetail = (itemId) => {
@@ -110,15 +184,19 @@ const SearchFoundItemsPage = () => {
 
   const handleCardHover = (index, isHovering) => {
     const card = itemsRef.current[index];
-    if (!card) return;
+    if (!card || !gsap) return;
 
-    gsap.to(card, {
-      scale: isHovering ? 1.03 : 1,
-      y: isHovering ? -5 : 0,
-      rotationY: isHovering ? 2 : 0,
-      duration: 0.3,
-      ease: 'power2.out'
-    });
+    try {
+      gsap.to(card, {
+        scale: isHovering ? 1.03 : 1,
+        y: isHovering ? -5 : 0,
+        rotationY: isHovering ? 2 : 0,
+        duration: 0.3,
+        ease: 'power2.out'
+      });
+    } catch (err) {
+      console.error('GSAP animation error:', err);
+    }
   };
 
   return (
@@ -141,6 +219,13 @@ const SearchFoundItemsPage = () => {
               placeholder="Nhập từ khóa tìm kiếm..."
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSearch(e);
+                }
+              }}
               className="search-input"
             />
           </div>
@@ -188,15 +273,24 @@ const SearchFoundItemsPage = () => {
           </div>
         )}
         
-        {error && (
+        {error && !loading && (
           <div className="error-enhanced">
-            <p>{error}</p>
+            <p>Lỗi: {typeof error === 'string' ? error : error?.message || 'Có lỗi xảy ra'}</p>
+            <button 
+              onClick={() => {
+                setSearchParams({ keyword: debouncedKeyword || keyword, category, campus });
+                setPage(1);
+              }}
+              className="btn-retry"
+            >
+              Thử lại
+            </button>
           </div>
         )}
         
-        {data && (
+        {!loading && !error && data && data.data !== undefined && (
           <>
-            {data.data?.length === 0 ? (
+            {(!data.data || data.data.length === 0) ? (
               <div className="empty-state-enhanced">
                 <FiPackage className="empty-icon" />
                 <h3>Không tìm thấy đồ vật nào</h3>
@@ -212,14 +306,18 @@ const SearchFoundItemsPage = () => {
                   Tìm thấy {data.pagination?.total || data.data?.length || 0} kết quả
                 </div>
                 <div className="items-grid-enhanced">
-                  {data.data?.map((item, index) => (
-                    <div
-                      key={item._id || item.foundId}
-                      ref={el => itemsRef.current[index] = el}
-                      className="item-card-enhanced"
-                      onMouseEnter={() => handleCardHover(index, true)}
-                      onMouseLeave={() => handleCardHover(index, false)}
-                    >
+                  {data.data && Array.isArray(data.data) && data.data.map((item, index) => {
+                    if (!item) return null;
+                    return (
+                      <div
+                        key={item._id || item.foundId || index}
+                        ref={el => {
+                          if (el) itemsRef.current[index] = el;
+                        }}
+                        className="item-card-enhanced"
+                        onMouseEnter={() => handleCardHover(index, true)}
+                        onMouseLeave={() => handleCardHover(index, false)}
+                      >
                       {/* Image Section */}
                       <div className="card-image-wrapper">
                         {item.images && item.images.length > 0 ? (
@@ -243,26 +341,31 @@ const SearchFoundItemsPage = () => {
 
                       <div className="card-content">
                         <div className="card-header">
-                          <h3 className="card-title">{item.itemName}</h3>
+                          <h3 className="card-title">{item.itemName || 'Không có tên'}</h3>
                         </div>
-                        <p className="card-description">{item.description}</p>
+                        <p className="card-description">{item.description || 'Không có mô tả'}</p>
                         <div className="card-meta">
-                          <span className="card-category">{item.category}</span>
-                          <span className="card-color">Màu: {item.color}</span>
-                          <span className="card-campus">{item.campus}</span>
+                          <span className="card-category">{item.category || 'N/A'}</span>
+                          <span className="card-color">Màu: {item.color || 'N/A'}</span>
+                          <span className="card-campus">{item.campus || 'N/A'}</span>
                         </div>
                         <div className="card-footer">
                           <div className="card-info">
                             <span className="card-date">
-                              Tìm thấy: {new Date(item.dateFound).toLocaleDateString('vi-VN')}
+                              Tìm thấy: {item.dateFound ? new Date(item.dateFound).toLocaleDateString('vi-VN') : 'N/A'}
                             </span>
                             <span className="card-location">
-                              <FiPackage size={14} /> {item.locationFound}
+                              <FiPackage size={14} /> {item.locationFound || 'N/A'}
                             </span>
                           </div>
                           <button
                             className="btn-view-detail"
-                            onClick={() => handleViewDetail(item._id || item.foundId)}
+                            onClick={() => {
+                              const itemId = item._id || item.foundId;
+                              if (itemId) {
+                                handleViewDetail(itemId);
+                              }
+                            }}
                           >
                             <FiEye size={16} />
                             Xem chi tiết
@@ -270,7 +373,8 @@ const SearchFoundItemsPage = () => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {data.pagination && data.pagination.pages > 1 && (

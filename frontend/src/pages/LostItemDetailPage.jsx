@@ -4,6 +4,7 @@ import { useFetch } from '../hooks/useFetch';
 import { useNotification } from '../hooks/useNotification';
 import { gsap } from 'gsap';
 import lostItemService from '../api/lostItemService';
+import uploadService from '../api/uploadService';
 import AnimatedBackground from '../components/common/AnimatedBackground';
 import { 
   FiArrowLeft, 
@@ -16,7 +17,9 @@ import {
   FiTrash2,
   FiImage,
   FiPhone,
-  FiTag
+  FiTag,
+  FiUpload,
+  FiXCircle
 } from 'react-icons/fi';
 import { formatDate, getStatusLabel } from '../utils/helpers';
 import { CATEGORIES, CAMPUSES } from '../utils/constants';
@@ -27,6 +30,10 @@ const LostItemDetailPage = () => {
   const { showSuccess, showError } = useNotification();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
+  const [images, setImages] = useState([]);
+  const [previewImages, setPreviewImages] = useState([]); // Local preview before upload
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
   
   const pageRef = useRef(null);
   const headerRef = useRef(null);
@@ -51,6 +58,24 @@ const LostItemDetailPage = () => {
         features: data.data.features || [],
         priority: data.data.priority || 'normal'
       });
+      // Convert relative URLs to absolute URLs
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const imageUrls = (data.data.images || []).map(url => {
+        if (!url) return null;
+        // If URL already starts with http, use as is
+        if (url.startsWith('http')) return url;
+        // If URL starts with /, prepend API_URL
+        if (url.startsWith('/')) return `${API_URL}${url}`;
+        // Otherwise, assume it's relative to uploads
+        return `${API_URL}/uploads/${url}`;
+      }).filter(Boolean); // Remove null/empty values
+      
+      console.log('📸 Loaded images from API:', data.data.images);
+      console.log('🔗 Converted image URLs:', imageUrls);
+      console.log('📊 Images state will be set to:', imageUrls);
+      
+      setImages(imageUrls);
+      setPreviewImages([]); // Clear preview when loading new data
     }
   }, [data]);
 
@@ -69,6 +94,12 @@ const LostItemDetailPage = () => {
     }
   }, [data, loading]);
 
+  // Debug: Log when images state changes
+  useEffect(() => {
+    console.log('🔄 Images state changed:', images);
+    console.log('🔄 Preview images state changed:', previewImages);
+  }, [images, previewImages]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -77,8 +108,138 @@ const LostItemDetailPage = () => {
     }));
   };
 
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    console.log('📁 Files selected:', files.length);
+
+    // Create preview URLs for local files
+    const previewUrls = files.map(file => URL.createObjectURL(file));
+    console.log('🖼️ Created preview URLs:', previewUrls);
+    
+    // Add preview images first
+    setPreviewImages(prev => {
+      const newPreviews = [...prev, ...previewUrls];
+      console.log('🖼️ Preview images state updated:', newPreviews);
+      return newPreviews;
+    });
+    
+    // Upload immediately
+    handleImageUpload(files);
+  };
+
+  const handleImageUpload = async (files) => {
+    setUploading(true);
+    try {
+      const result = await uploadService.uploadImages(files);
+      console.log('Upload result:', result); // Debug log
+      
+      if (result.success && result.data?.urls) {
+        // Convert relative URLs to absolute URLs
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const absoluteUrls = result.data.urls.map(url => {
+          // If URL already starts with http, use as is
+          if (url.startsWith('http')) return url;
+          // If URL starts with /, prepend API_URL
+          if (url.startsWith('/')) return `${API_URL}${url}`;
+          // Otherwise, assume it's relative to uploads
+          return `${API_URL}/uploads/${url}`;
+        });
+        
+        console.log('Absolute URLs:', absoluteUrls); // Debug log
+        console.log('Current images state:', images); // Debug log
+        
+        // Use functional update to ensure we have the latest state
+        setImages(prevImages => {
+          const newImages = [...prevImages, ...absoluteUrls];
+          console.log('📸 Previous images:', prevImages);
+          console.log('📸 New images:', newImages);
+          console.log('📸 Absolute URLs added:', absoluteUrls);
+          return newImages;
+        });
+        
+        // Clear preview images after successful upload
+        // Use setTimeout to ensure state updates are processed
+        setTimeout(() => {
+          setPreviewImages(prev => {
+            const previewStartIndex = prev.length - files.length;
+            console.log('🗑️ Clearing preview images, start index:', previewStartIndex);
+            files.forEach((_, index) => {
+              if (prev[previewStartIndex + index]) {
+                URL.revokeObjectURL(prev[previewStartIndex + index]);
+              }
+            });
+            const newPreviews = prev.slice(0, previewStartIndex);
+            console.log('🗑️ Preview images after clear:', newPreviews);
+            return newPreviews;
+          });
+        }, 100);
+        
+        showSuccess(`Đã upload ${result.data.urls.length} hình ảnh thành công!`);
+      } else {
+        console.error('Upload failed:', result); // Debug log
+        showError(result.error?.message || result.error || 'Upload hình ảnh thất bại');
+        // Remove preview on error
+        const previewStartIndex = previewImages.length - files.length;
+        files.forEach((_, index) => {
+          if (previewImages[previewStartIndex + index]) {
+            URL.revokeObjectURL(previewImages[previewStartIndex + index]);
+          }
+        });
+        setPreviewImages(prev => prev.slice(0, previewStartIndex));
+      }
+    } catch (error) {
+      console.error('Upload error:', error); // Debug log
+      showError('Có lỗi xảy ra khi upload hình ảnh');
+      // Remove preview on error
+      const previewStartIndex = previewImages.length - files.length;
+      files.forEach((_, index) => {
+        if (previewImages[previewStartIndex + index]) {
+          URL.revokeObjectURL(previewImages[previewStartIndex + index]);
+        }
+      });
+      setPreviewImages(prev => prev.slice(0, previewStartIndex));
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveImage = (index) => {
+    // Check if it's a preview image (local) or uploaded image
+    const totalImages = images.length + previewImages.length;
+    if (index < images.length) {
+      // Remove uploaded image
+      const newImages = images.filter((_, i) => i !== index);
+      setImages(newImages);
+    } else {
+      // Remove preview image
+      const previewIndex = index - images.length;
+      URL.revokeObjectURL(previewImages[previewIndex]);
+      const newPreviewImages = previewImages.filter((_, i) => i !== previewIndex);
+      setPreviewImages(newPreviewImages);
+    }
+  };
+
   const handleUpdate = async () => {
     try {
+      // Convert absolute URLs back to relative URLs for storage
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const imageUrlsForStorage = images.map(url => {
+        if (!url) return url;
+        // If URL contains API_URL, extract relative path
+        if (url.includes(API_URL)) {
+          return url.replace(API_URL, '');
+        }
+        // If already relative, use as is
+        if (url.startsWith('/')) return url;
+        // If it's already a full URL from another source, keep it
+        return url;
+      });
+
       // Students can only update certain fields, not status or system fields
       const updateData = {
         itemName: formData.itemName,
@@ -89,18 +250,25 @@ const LostItemDetailPage = () => {
         locationLost: formData.locationLost,
         campus: formData.campus,
         phone: formData.phone,
-        priority: formData.priority
+        priority: formData.priority,
+        images: imageUrlsForStorage // Include updated images (relative URLs)
       };
+
+      console.log('Updating with data:', updateData); // Debug log
 
       const result = await lostItemService.updateReport(id, updateData);
       if (result.success) {
         showSuccess('Cập nhật báo cáo thành công!');
         setIsEditing(false);
-        refetch();
+        // Clear preview images
+        previewImages.forEach(url => URL.revokeObjectURL(url));
+        setPreviewImages([]);
+        refetch(); // This will reload data and convert URLs again
       } else {
         showError(result.error?.message || result.error || 'Cập nhật thất bại');
       }
     } catch (error) {
+      console.error('Update error:', error); // Debug log
       showError('Có lỗi xảy ra khi cập nhật');
     }
   };
@@ -210,6 +378,18 @@ const LostItemDetailPage = () => {
                 <button
                   onClick={() => {
                     setIsEditing(false);
+                    // Clear preview images
+                    previewImages.forEach(url => URL.revokeObjectURL(url));
+                    setPreviewImages([]);
+                    // Reset images to original
+                    if (data?.success && data.data) {
+                      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                      const imageUrls = (data.data.images || []).map(url => {
+                        if (url.startsWith('http')) return url;
+                        return `${API_URL}${url}`;
+                      });
+                      setImages(imageUrls);
+                    }
                     refetch();
                   }}
                   className="btn-cancel"
@@ -226,13 +406,116 @@ const LostItemDetailPage = () => {
           <div className="detail-card">
             {/* Image Section */}
             <div className="detail-image-section">
-              {item.images && item.images.length > 0 ? (
-                <img src={item.images[0]} alt={item.itemName} className="detail-image" />
-              ) : (
-                <div className="detail-image-placeholder">
-                  <FiImage size={64} />
-                  <span>Không có hình ảnh</span>
+              {isEditing ? (
+                <div className="image-upload-section">
+                  {(() => {
+                    const totalImages = images.length + previewImages.length;
+                    console.log('🖼️ Rendering images - Total:', totalImages, 'Uploaded:', images.length, 'Preview:', previewImages.length);
+                    console.log('🖼️ Images URLs:', images);
+                    console.log('🖼️ Preview URLs:', previewImages);
+                    
+                    if (totalImages > 0) {
+                      return (
+                        <div className="images-preview-grid">
+                          {/* Show uploaded images */}
+                          {images.map((img, index) => {
+                            console.log(`🖼️ Rendering uploaded image ${index}:`, img);
+                            return (
+                              <div key={`uploaded-${index}-${img}`} className="image-preview-item">
+                                <img 
+                                  src={img} 
+                                  alt={`Uploaded ${index + 1}`} 
+                                  onError={(e) => {
+                                    console.error(`❌ Image load error for ${img}:`, e);
+                                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="14" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage not found%3C/text%3E%3C/svg%3E';
+                                  }}
+                                  onLoad={() => {
+                                    console.log(`✅ Image loaded successfully: ${img}`);
+                                  }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveImage(index)}
+                                  className="remove-image-btn"
+                                >
+                                  <FiXCircle />
+                                </button>
+                              </div>
+                            );
+                          })}
+                          {/* Show preview images (local, before upload) */}
+                          {previewImages.map((img, index) => {
+                            console.log(`🖼️ Rendering preview image ${index}:`, img);
+                            return (
+                              <div key={`preview-${index}-${img}`} className="image-preview-item preview">
+                                <img src={img} alt={`Preview ${index + 1}`} />
+                                <div className="preview-badge">Đang upload...</div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveImage(images.length + index)}
+                                  className="remove-image-btn"
+                                >
+                                  <FiXCircle />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div className="detail-image-placeholder">
+                          <FiImage size={64} />
+                          <span>Chưa có hình ảnh</span>
+                        </div>
+                      );
+                    }
+                  })()}
+                  <div className="upload-controls">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="file-input-hidden"
+                      id="image-upload-input"
+                      disabled={uploading}
+                    />
+                    <label htmlFor="image-upload-input" className="upload-button">
+                      <FiUpload />
+                      <span>{uploading ? 'Đang upload...' : 'Thêm hình ảnh'}</span>
+                    </label>
+                    <small className="upload-hint">Tối đa 5 ảnh, mỗi ảnh tối đa 5MB</small>
+                  </div>
                 </div>
+              ) : (
+                (images.length > 0 || (item.images && item.images.length > 0)) ? (
+                  <img 
+                    src={images.length > 0 ? images[0] : (() => {
+                      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                      const url = item.images[0];
+                      if (!url) return '';
+                      if (url.startsWith('http')) return url;
+                      if (url.startsWith('/')) return `${API_URL}${url}`;
+                      return `${API_URL}/uploads/${url}`;
+                    })()} 
+                    alt={item.itemName} 
+                    className="detail-image" 
+                    onError={(e) => {
+                      console.error('Image load error:', e.target.src);
+                      e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="14" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage not found%3C/text%3E%3C/svg%3E';
+                    }} 
+                    onLoad={() => {
+                      console.log('Image loaded successfully');
+                    }}
+                  />
+                ) : (
+                  <div className="detail-image-placeholder">
+                    <FiImage size={64} />
+                    <span>Không có hình ảnh</span>
+                  </div>
+                )
               )}
             </div>
 
