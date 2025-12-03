@@ -22,7 +22,7 @@ const LostItemsPage = () => {
   const formRef = useRef(null);
   const listRef = useRef(null);
 
-  const { data, loading, error } = useFetch(
+  const { data, loading, error, refetch } = useFetch(
     () => lostItemService.getMyReports(page),
     [page]
   );
@@ -71,11 +71,12 @@ const LostItemsPage = () => {
         duration: 0.3,
         onComplete: () => {
           setShowForm(false);
-          window.location.reload();
+          // Refetch data instead of reloading the page
+          refetch();
         }
       });
     } else {
-      showError(result.error?.message || 'Tạo báo cáo thất bại');
+      showError(result.error?.message || result.error || 'Tạo báo cáo thất bại');
       
       // Shake animation on error
       gsap.to(formRef.current, {

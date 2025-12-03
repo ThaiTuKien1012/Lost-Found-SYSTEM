@@ -11,13 +11,14 @@ import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
 import LostItemsPage from './pages/LostItemsPage';
 import FoundItemsPage from './pages/FoundItemsPage';
+import SearchFoundItemsPage from './pages/SearchFoundItemsPage';
 import MatchingPage from './pages/MatchingPage';
+import MyTransactionsPage from './pages/MyTransactionsPage';
 import ReportsPage from './pages/ReportsPage';
 import ProfilePage from './pages/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Layouts
-import Header from './components/common/Header';
 import Sidebar from './components/common/Sidebar';
 import Footer from './components/common/Footer';
 
@@ -29,7 +30,6 @@ const AppContent = () => {
 
   return (
     <div className="app">
-      {!isAuthPage && <Header />}
       {!isAuthPage ? (
         <div className="app-container">
           <Sidebar />
@@ -61,12 +61,30 @@ const AppContent = () => {
                   </ProtectedRoute>
                 }
               />
+
+              <Route
+                path="/found-items/search"
+                element={
+                  <ProtectedRoute>
+                    <SearchFoundItemsPage />
+                  </ProtectedRoute>
+                }
+              />
               
               <Route
                 path="/matching"
                 element={
                   <ProtectedRoute>
                     <MatchingPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/returns/my-transactions"
+                element={
+                  <ProtectedRoute>
+                    <MyTransactionsPage />
                   </ProtectedRoute>
                 }
               />

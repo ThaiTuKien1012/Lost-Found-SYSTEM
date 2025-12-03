@@ -75,10 +75,10 @@ const Header = () => {
                   to={item.path}
                   className={`nav-link ${isActive ? 'active' : ''}`}
                   onMouseEnter={(e) => {
-                    gsap.to(e.currentTarget, { scale: 1.05, duration: 0.2 });
+                    gsap.to(e.currentTarget, { scale: 1.05, y: -2, duration: 0.2 });
                   }}
                   onMouseLeave={(e) => {
-                    gsap.to(e.currentTarget, { scale: 1, duration: 0.2 });
+                    gsap.to(e.currentTarget, { scale: 1, y: 0, duration: 0.2 });
                   }}
                 >
                   <Icon className="nav-icon" />
