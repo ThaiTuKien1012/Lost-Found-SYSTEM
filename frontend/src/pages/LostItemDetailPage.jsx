@@ -59,15 +59,16 @@ const LostItemDetailPage = () => {
         priority: data.data.priority || 'normal'
       });
       // Convert relative URLs to absolute URLs
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      // Static files are served from base URL, not API URL
+      const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '');
       const imageUrls = (data.data.images || []).map(url => {
         if (!url) return null;
         // If URL already starts with http, use as is
         if (url.startsWith('http')) return url;
-        // If URL starts with /, prepend API_URL
-        if (url.startsWith('/')) return `${API_URL}${url}`;
+        // If URL starts with /, prepend BASE_URL (not API_URL)
+        if (url.startsWith('/')) return `${BASE_URL}${url}`;
         // Otherwise, assume it's relative to uploads
-        return `${API_URL}/uploads/${url}`;
+        return `${BASE_URL}/uploads/${url}`;
       }).filter(Boolean); // Remove null/empty values
       
       console.log('📸 Loaded images from API:', data.data.images);
@@ -137,14 +138,15 @@ const LostItemDetailPage = () => {
       
       if (result.success && result.data?.urls) {
         // Convert relative URLs to absolute URLs
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        // Static files are served from base URL, not API URL
+        const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '');
         const absoluteUrls = result.data.urls.map(url => {
           // If URL already starts with http, use as is
           if (url.startsWith('http')) return url;
-          // If URL starts with /, prepend API_URL
-          if (url.startsWith('/')) return `${API_URL}${url}`;
+          // If URL starts with /, prepend BASE_URL (not API_URL)
+          if (url.startsWith('/')) return `${BASE_URL}${url}`;
           // Otherwise, assume it's relative to uploads
-          return `${API_URL}/uploads/${url}`;
+          return `${BASE_URL}/uploads/${url}`;
         });
         
         console.log('Absolute URLs:', absoluteUrls); // Debug log
@@ -227,16 +229,25 @@ const LostItemDetailPage = () => {
   const handleUpdate = async () => {
     try {
       // Convert absolute URLs back to relative URLs for storage
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '');
       const imageUrlsForStorage = images.map(url => {
         if (!url) return url;
-        // If URL contains API_URL, extract relative path
-        if (url.includes(API_URL)) {
-          return url.replace(API_URL, '');
+        // If URL contains BASE_URL, extract relative path
+        if (url.includes(BASE_URL)) {
+          return url.replace(BASE_URL, '');
         }
         // If already relative, use as is
         if (url.startsWith('/')) return url;
-        // If it's already a full URL from another source, keep it
+        // If it's already a full URL from another source, extract path
+        if (url.startsWith('http')) {
+          // Extract path from full URL
+          try {
+            const urlObj = new URL(url);
+            return urlObj.pathname;
+          } catch (e) {
+            return url;
+          }
+        }
         return url;
       });
 
@@ -383,11 +394,13 @@ const LostItemDetailPage = () => {
                     setPreviewImages([]);
                     // Reset images to original
                     if (data?.success && data.data) {
-                      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                      const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '');
                       const imageUrls = (data.data.images || []).map(url => {
+                        if (!url) return null;
                         if (url.startsWith('http')) return url;
-                        return `${API_URL}${url}`;
-                      });
+                        if (url.startsWith('/')) return `${BASE_URL}${url}`;
+                        return `${BASE_URL}/uploads/${url}`;
+                      }).filter(Boolean);
                       setImages(imageUrls);
                     }
                     refetch();
@@ -493,12 +506,12 @@ const LostItemDetailPage = () => {
                 (images.length > 0 || (item.images && item.images.length > 0)) ? (
                   <img 
                     src={images.length > 0 ? images[0] : (() => {
-                      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+                      const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '');
                       const url = item.images[0];
                       if (!url) return '';
                       if (url.startsWith('http')) return url;
-                      if (url.startsWith('/')) return `${API_URL}${url}`;
-                      return `${API_URL}/uploads/${url}`;
+                      if (url.startsWith('/')) return `${BASE_URL}${url}`;
+                      return `${BASE_URL}/uploads/${url}`;
                     })()} 
                     alt={item.itemName} 
                     className="detail-image" 

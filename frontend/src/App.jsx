@@ -13,6 +13,7 @@ import LostItemsPage from './pages/LostItemsPage';
 import LostItemDetailPage from './pages/LostItemDetailPage';
 import FoundItemsPage from './pages/FoundItemsPage';
 import SearchFoundItemsPage from './pages/SearchFoundItemsPage';
+import FoundItemDetailPage from './pages/FoundItemDetailPage';
 import MatchingPage from './pages/MatchingPage';
 import MyTransactionsPage from './pages/MyTransactionsPage';
 import ReportsPage from './pages/ReportsPage';
@@ -77,6 +78,15 @@ const AppContent = () => {
                 element={
                   <ProtectedRoute>
                     <SearchFoundItemsPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/found-items/:id"
+                element={
+                  <ProtectedRoute>
+                    <FoundItemDetailPage />
                   </ProtectedRoute>
                 }
               />

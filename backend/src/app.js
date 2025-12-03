@@ -11,6 +11,7 @@ const app = express();
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: false, // Allow Swagger UI
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow images from different origins
 }));
 app.use(cors());
 app.use(mongoSanitize());
@@ -19,8 +20,16 @@ app.use(mongoSanitize());
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ limit: '10kb', extended: true }));
 
-// Serve static files
-app.use('/uploads', express.static('uploads'));
+// Serve static files with CORS headers
+app.use('/uploads', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+}, express.static('uploads'));
 
 // Swagger Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {

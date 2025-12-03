@@ -3233,3 +3233,93 @@ body {
   }
 }
 
+/* Found Item Detail Page */
+.found-item-detail-page {
+  position: relative;
+  padding: 40px;
+  min-height: calc(100vh - 200px);
+}
+
+/* Image Gallery for Found Items */
+.image-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.image-gallery .detail-image {
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Contact Section */
+.detail-contact-section {
+  margin-top: 32px;
+  padding: 24px;
+  background: rgba(33, 128, 160, 0.05);
+  border-radius: 12px;
+  border-left: 4px solid var(--primary-color);
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid rgba(33, 128, 160, 0.1);
+}
+
+.contact-icon {
+  font-size: 1.25rem;
+  color: var(--primary-color);
+  flex-shrink: 0;
+}
+
+.contact-item span {
+  font-size: 1rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .found-item-detail-page {
+    padding: 20px;
+  }
+
+  .image-gallery {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+
+  .image-gallery .detail-image {
+    min-height: 250px;
+  }
+
+  .contact-info {
+    gap: 8px;
+  }
+}
+
