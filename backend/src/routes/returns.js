@@ -49,26 +49,6 @@ router.post('/', authenticateToken, roleCheck('security'), returnController.crea
 
 /**
  * @swagger
- * /api/returns/{transactionId}:
- *   get:
- *     summary: Chi tiết trả
- *     tags: [Returns]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: transactionId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Return transaction details
- */
-router.get('/:transactionId', authenticateToken, returnController.getReturnDetail);
-
-/**
- * @swagger
  * /api/returns/my-transactions:
  *   get:
  *     summary: Lịch sử trả của tôi
@@ -89,6 +69,26 @@ router.get('/:transactionId', authenticateToken, returnController.getReturnDetai
  *         description: User's return transactions
  */
 router.get('/my-transactions', authenticateToken, roleCheck('student'), returnController.getMyTransactions);
+
+/**
+ * @swagger
+ * /api/returns/{transactionId}:
+ *   get:
+ *     summary: Chi tiết trả
+ *     tags: [Returns]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: transactionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Return transaction details
+ */
+router.get('/:transactionId', authenticateToken, returnController.getReturnDetail);
 
 /**
  * @swagger
