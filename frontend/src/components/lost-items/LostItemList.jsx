@@ -5,6 +5,9 @@ import { getStatusLabel } from '../../utils/helpers';
 import { FiPackage, FiCalendar, FiMapPin, FiArrowRight, FiImage } from 'react-icons/fi';
 
 const LostItemList = ({ items, pagination, onPageChange }) => {
+  // Get BASE_URL for static files (without /api)
+  const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '');
+
   const getCategoryIcon = (category) => {
     return <FiPackage />;
   };
@@ -24,6 +27,17 @@ const LostItemList = ({ items, pagination, onPageChange }) => {
     }
   };
 
+  // Convert relative URL to absolute URL for display
+  const getImageUrl = (url) => {
+    if (!url) return null;
+    // If URL already starts with http, use as is
+    if (url.startsWith('http')) return url;
+    // If URL starts with /, prepend BASE_URL
+    if (url.startsWith('/')) return `${BASE_URL}${url}`;
+    // Otherwise, assume it's relative to uploads
+    return `${BASE_URL}/uploads/${url}`;
+  };
+
   return (
     <div className="lost-items-list-enhanced">
       {items.length === 0 ? (
@@ -37,11 +51,22 @@ const LostItemList = ({ items, pagination, onPageChange }) => {
           <div className="items-grid-enhanced">
             {items.map((item) => {
               const statusColors = getStatusColor(item.status);
+              const imageUrl = item.images && item.images.length > 0 
+                ? getImageUrl(item.images[0])
+                : null;
+              
               return (
                 <div key={item._id} className="lost-item-card-enhanced">
                   <div className="lost-item-image-wrapper">
-                    {item.images && item.images.length > 0 ? (
-                      <img src={item.images[0]} alt={item.itemName} className="lost-item-image" />
+                    {imageUrl ? (
+                      <img 
+                        src={imageUrl} 
+                        alt={item.itemName} 
+                        className="lost-item-image"
+                        onError={(e) => {
+                          e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="14" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage not found%3C/text%3E%3C/svg%3E';
+                        }}
+                      />
                     ) : (
                       <div className="lost-item-placeholder">
                         <FiImage size={48} />

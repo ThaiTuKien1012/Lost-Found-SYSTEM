@@ -14,6 +14,20 @@ const SearchFoundItemsPage = () => {
   const [searchParams, setSearchParams] = useState({});
   const [debouncedKeyword, setDebouncedKeyword] = useState('');
 
+  // Get BASE_URL for static files (without /api)
+  const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '');
+
+  // Convert relative URL to absolute URL for display
+  const getImageUrl = (url) => {
+    if (!url) return null;
+    // If URL already starts with http, use as is
+    if (url.startsWith('http')) return url;
+    // If URL starts with /, prepend BASE_URL
+    if (url.startsWith('/')) return `${BASE_URL}${url}`;
+    // Otherwise, assume it's relative to uploads
+    return `${BASE_URL}/uploads/${url}`;
+  };
+
   const pageRef = useRef(null);
   const titleRef = useRef(null);
   const searchRef = useRef(null);
@@ -322,7 +336,7 @@ const SearchFoundItemsPage = () => {
                       <div className="card-image-wrapper">
                         {item.images && item.images.length > 0 ? (
                           <img 
-                            src={item.images[0]} 
+                            src={getImageUrl(item.images[0])} 
                             alt={item.itemName}
                             className="card-image"
                             onError={(e) => {
