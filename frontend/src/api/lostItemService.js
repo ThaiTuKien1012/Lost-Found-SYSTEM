@@ -144,11 +144,11 @@ const lostItemService = {
     }
   },
 
-  rejectReport: async (reportId, rejectionReason) => {
+  rejectReport: async (reportId, reason) => {
     try {
       const response = await axios.put(
         `${API_URL}/lost-items/${reportId}/reject`,
-        { rejectionReason },
+        { reason },
         getHeaders()
       );
       return response.data;

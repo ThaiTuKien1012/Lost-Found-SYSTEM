@@ -91,6 +91,22 @@ const matchingService = {
         error: error.response?.data?.error || 'Failed to resolve match'
       };
     }
+  },
+
+  createMatch: async (lostItemId, foundItemId, notes = '') => {
+    try {
+      const response = await axios.post(
+        `${API_URL}/matching`,
+        { lostItemId, foundItemId, notes },
+        getHeaders()
+      );
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to create match'
+      };
+    }
   }
 };
 

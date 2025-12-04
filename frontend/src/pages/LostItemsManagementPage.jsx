@@ -33,20 +33,38 @@ const LostItemsManagementPage = () => {
   );
 
   useEffect(() => {
+    if (!titleRef.current) return;
+    
     const tl = gsap.timeline();
     
     tl.fromTo(titleRef.current,
       { opacity: 0, y: -30, scale: 0.9 },
       { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'back.out(1.7)' }
     );
+  }, []);
 
-    if (data?.data && itemsRef.current.length > 0) {
-      gsap.fromTo(itemsRef.current,
-        { opacity: 0, x: -50 },
-        { opacity: 1, x: 0, duration: 0.5, stagger: 0.1, ease: 'power2.out' },
-        '-=0.3'
-      );
+  // Separate effect for animating items when data changes
+  useEffect(() => {
+    if (!data?.data || data.data.length === 0) {
+      itemsRef.current = [];
+      return;
     }
+
+    // Reset refs array to match new data length
+    itemsRef.current = new Array(data.data.length).fill(null);
+
+    // Wait for DOM to update before animating
+    const timer = setTimeout(() => {
+      const validRefs = itemsRef.current.filter(ref => ref !== null && ref !== undefined);
+      if (validRefs.length > 0) {
+        gsap.fromTo(validRefs,
+          { opacity: 0, x: -50 },
+          { opacity: 1, x: 0, duration: 0.5, stagger: 0.1, ease: 'power2.out' }
+        );
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [data]);
 
   const handleSearch = async () => {
@@ -86,18 +104,21 @@ const LostItemsManagementPage = () => {
 
   const handleReject = async (reportId) => {
     const reason = window.prompt('Nhập lý do từ chối:');
-    if (!reason) return;
+    if (!reason || reason.trim() === '') {
+      return; // User cancelled or entered empty string
+    }
 
     try {
-      const result = await lostItemService.rejectReport(reportId, reason);
-      if (result.success) {
+      const result = await lostItemService.rejectReport(reportId, reason.trim());
+      if (result?.success) {
         showSuccess('Đã từ chối báo cáo!');
         refetch();
       } else {
-        showError(result.error?.message || 'Từ chối thất bại');
+        showError(result?.error?.message || result?.error || 'Từ chối thất bại');
       }
     } catch (error) {
-      showError('Có lỗi xảy ra khi từ chối');
+      console.error('Reject error:', error);
+      showError(error?.message || 'Có lỗi xảy ra khi từ chối');
     }
   };
 
@@ -241,7 +262,11 @@ const LostItemsManagementPage = () => {
                     return (
                       <div
                         key={report._id}
-                        ref={el => itemsRef.current[index] = el}
+                        ref={el => {
+                          if (el) {
+                            itemsRef.current[index] = el;
+                          }
+                        }}
                         className="report-card-enhanced"
                       >
                         <div className="report-header">
@@ -250,11 +275,26 @@ const LostItemsManagementPage = () => {
                             <span className="report-id">ID: {report.reportId}</span>
                           </div>
                           <div
-                            className="status-badge"
+                            className="status-badge clickable-status-badge"
+                            onClick={() => {
+                              setStatusFilter(report.status);
+                              setPage(1);
+                            }}
+                            title={`Click để lọc theo trạng thái: ${getStatusLabel(report.status)}`}
                             style={{
                               backgroundColor: statusColors.bg,
                               color: statusColors.color,
-                              borderColor: statusColors.border
+                              borderColor: statusColors.border,
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'scale(1.05)';
+                              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                              e.currentTarget.style.boxShadow = 'none';
                             }}
                           >
                             {getStatusLabel(report.status)}
@@ -264,10 +304,24 @@ const LostItemsManagementPage = () => {
                         <div className="report-body">
                           <p className="report-description">{report.description}</p>
                           <div className="report-meta">
-                            <span className="meta-item">
+                            <span 
+                              className="meta-item clickable-meta"
+                              onClick={() => {
+                                setCategoryFilter(report.category);
+                                setPage(1);
+                              }}
+                              title={`Click để lọc theo loại: ${report.category}`}
+                            >
                               <FiPackage /> {report.category}
                             </span>
-                            <span className="meta-item">
+                            <span 
+                              className="meta-item clickable-meta"
+                              onClick={() => {
+                                setCampusFilter(report.campus);
+                                setPage(1);
+                              }}
+                              title={`Click để lọc theo campus: ${report.campus}`}
+                            >
                               📍 {report.campus}
                             </span>
                             <span className="meta-item">

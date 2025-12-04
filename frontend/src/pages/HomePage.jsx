@@ -2,9 +2,11 @@ import React, { useEffect, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Link } from 'react-router-dom';
 import { gsap } from 'gsap';
-import { FiPackage, FiSearch, FiTrendingUp, FiBarChart2, FiPlus } from 'react-icons/fi';
+import { FiPackage, FiSearch, FiTrendingUp, FiBarChart2, FiPlus, FiCheckCircle } from 'react-icons/fi';
 import AnimatedBackground from '../components/common/AnimatedBackground';
 import StudentStats from '../components/common/StudentStats';
+import { useFetch } from '../hooks/useFetch';
+import reportService from '../api/reportService';
 
 const HomePage = () => {
   const { user } = useAuth();
@@ -12,6 +14,13 @@ const HomePage = () => {
   const titleRef = useRef(null);
   const subtitleRef = useRef(null);
   const cardsRef = useRef([]);
+  const statsCardsRef = useRef([]);
+
+  // Fetch dashboard data for Staff/Admin
+  const { data: dashboardData } = useFetch(
+    () => (user?.role === 'staff' || user?.role === 'admin') ? reportService.getDashboard() : Promise.resolve({ success: false }),
+    [user?.role]
+  );
 
   useEffect(() => {
     const tl = gsap.timeline();
@@ -24,14 +33,27 @@ const HomePage = () => {
       { opacity: 0, y: 20 },
       { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' },
       '-=0.4'
-    )
-    .fromTo(cardsRef.current,
-      { opacity: 0, y: 50, rotationY: -15 },
-      { opacity: 1, y: 0, rotationY: 0, duration: 0.6, stagger: 0.15, ease: 'power3.out' },
-      '-=0.3'
     );
 
-    // Floating animation for cards
+    // Animate stats cards for Staff/Admin
+    if ((user?.role === 'staff' || user?.role === 'admin') && statsCardsRef.current.length > 0) {
+      gsap.fromTo(statsCardsRef.current,
+        { opacity: 0, y: 30, scale: 0.9 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.1, ease: 'power2.out' },
+        '-=0.2'
+      );
+    }
+
+    // Animate action cards
+    if (cardsRef.current.length > 0) {
+      gsap.fromTo(cardsRef.current,
+        { opacity: 0, y: 50, rotationY: -15 },
+        { opacity: 1, y: 0, rotationY: 0, duration: 0.6, stagger: 0.15, ease: 'power3.out' },
+        '-=0.3'
+      );
+    }
+
+    // Floating animation for action cards
     cardsRef.current.forEach((card, index) => {
       if (card) {
         gsap.to(card, {
@@ -43,7 +65,7 @@ const HomePage = () => {
         });
       }
     });
-  }, []);
+  }, [user?.role, dashboardData]);
 
   const handleCardHover = (index, isHovering) => {
     const card = cardsRef.current[index];
@@ -105,6 +127,62 @@ const HomePage = () => {
       {user?.role === 'student' && (
         <div className="student-stats-section">
           <StudentStats />
+        </div>
+      )}
+
+      {/* Dashboard Stats for Staff/Admin */}
+      {(user?.role === 'staff' || user?.role === 'admin') && dashboardData?.success && (
+        <div className="staff-dashboard-stats">
+          <div className="stats-grid-enhanced">
+            <div 
+              ref={el => statsCardsRef.current[0] = el}
+              className="stat-card-enhanced stat-blue"
+            >
+              <div className="stat-icon-wrapper">
+                <FiPackage className="stat-icon" />
+              </div>
+              <div className="stat-content">
+                <p className="stat-title">TỔNG BÁO CÁO</p>
+                <p className="stat-value">{dashboardData.data?.totalLost || 0}</p>
+              </div>
+            </div>
+
+            <div 
+              ref={el => statsCardsRef.current[1] = el}
+              className="stat-card-enhanced stat-green"
+            >
+              <div className="stat-icon-wrapper">
+                <FiCheckCircle className="stat-icon" />
+              </div>
+              <div className="stat-content">
+                <p className="stat-title">ĐÃ TÌM THẤY</p>
+                <p className="stat-value">{dashboardData.data?.totalFound || 0}</p>
+              </div>
+            </div>
+
+            <div 
+              ref={el => statsCardsRef.current[2] = el}
+              className="stat-card-enhanced stat-purple"
+            >
+              <div className="stat-icon-wrapper">
+                <FiTrendingUp className="stat-icon" />
+              </div>
+              <div className="stat-content">
+                <p className="stat-title">ĐÃ TRẢ LẠI</p>
+                <p className="stat-value">{dashboardData.data?.totalReturned || 0}</p>
+              </div>
+            </div>
+
+            <div 
+              ref={el => statsCardsRef.current[3] = el}
+              className="stat-card-enhanced stat-orange"
+            >
+              <div className="stat-content">
+                <p className="stat-title">TỶ LỆ TRẢ LẠI</p>
+                <p className="stat-value">{dashboardData.data?.recoveryRate || '0%'}</p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

@@ -170,6 +170,107 @@ exports.deleteLostItem = async (req, res) => {
   }
 };
 
+exports.verifyLostItem = async (req, res) => {
+  try {
+    const lostItem = await LostItem.findById(req.params.id);
+
+    if (!lostItem) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Lost item not found' }
+      });
+    }
+
+    if (lostItem.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATUS', message: 'Only pending reports can be verified' }
+      });
+    }
+
+    // Update status and verification info
+    lostItem.status = 'verified';
+    lostItem.verifiedBy = req.userId;
+    lostItem.verifiedAt = new Date();
+    lostItem.isVisible = true;
+    await lostItem.save();
+
+    // Audit log
+    await AuditLog.create({
+      userId: req.userId,
+      action: 'verify_report',
+      actionType: 'UPDATE',
+      entityType: 'lost_item',
+      entityId: lostItem.reportId,
+      status: 'success'
+    });
+
+    res.status(200).json({
+      success: true,
+      data: lostItem,
+      message: 'Report verified successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+exports.rejectLostItem = async (req, res) => {
+  try {
+    const lostItem = await LostItem.findById(req.params.id);
+
+    if (!lostItem) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Lost item not found' }
+      });
+    }
+
+    if (lostItem.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATUS', message: 'Only pending reports can be rejected' }
+      });
+    }
+
+    const { reason } = req.body;
+
+    if (!reason || reason.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Rejection reason is required' }
+      });
+    }
+
+    // Update status and rejection info
+    lostItem.status = 'rejected';
+    lostItem.rejectionReason = reason.trim();
+    lostItem.verifiedBy = req.userId;
+    lostItem.verifiedAt = new Date();
+    lostItem.isVisible = false;
+    await lostItem.save();
+
+    // Audit log
+    await AuditLog.create({
+      userId: req.userId,
+      action: 'reject_report',
+      actionType: 'UPDATE',
+      entityType: 'lost_item',
+      entityId: lostItem.reportId,
+      status: 'success',
+      notes: reason
+    });
+
+    res.status(200).json({
+      success: true,
+      data: lostItem,
+      message: 'Report rejected successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 exports.listLostItems = async (req, res) => {
   try {
     const { status, campus, category, page = 1, limit = 20 } = req.query;

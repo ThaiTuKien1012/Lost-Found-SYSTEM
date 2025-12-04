@@ -3,14 +3,21 @@ import { useFetch } from '../hooks/useFetch';
 import { useNotification } from '../hooks/useNotification';
 import { gsap } from 'gsap';
 import matchingService from '../api/matchingService';
+import lostItemService from '../api/lostItemService';
+import foundItemService from '../api/foundItemService';
 import AnimatedBackground from '../components/common/AnimatedBackground';
-import { FiTrendingUp, FiCheckCircle, FiXCircle, FiEye, FiFilter } from 'react-icons/fi';
+import { FiTrendingUp, FiCheckCircle, FiXCircle, FiEye, FiFilter, FiPlus, FiX } from 'react-icons/fi';
 import { formatDate } from '../utils/helpers';
 
 const MatchingManagementPage = () => {
   const { showSuccess, showError } = useNotification();
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedLostItem, setSelectedLostItem] = useState('');
+  const [selectedFoundItem, setSelectedFoundItem] = useState('');
+  const [notes, setNotes] = useState('');
+  const [creating, setCreating] = useState(false);
 
   const pageRef = useRef(null);
   const titleRef = useRef(null);
@@ -23,6 +30,18 @@ const MatchingManagementPage = () => {
   const { data, loading, error, refetch } = useFetch(
     () => matchingService.getMatches(page, 20, filters),
     [page, statusFilter]
+  );
+
+  // Fetch Lost Items for selection
+  const { data: lostItemsData } = useFetch(
+    () => lostItemService.getAllReports(1, 100, { status: 'verified' }),
+    []
+  );
+
+  // Fetch Found Items for selection
+  const { data: foundItemsData } = useFetch(
+    () => foundItemService.getFoundItems(1, 100, { status: 'unclaimed' }),
+    []
   );
 
   useEffect(() => {
@@ -83,6 +102,36 @@ const MatchingManagementPage = () => {
     }
   };
 
+  const handleCreateMatch = async () => {
+    if (!selectedLostItem || !selectedFoundItem) {
+      showError('Vui lòng chọn cả báo mất và đồ tìm được');
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const result = await matchingService.createMatch(
+        selectedLostItem,
+        selectedFoundItem,
+        notes
+      );
+      if (result.success) {
+        showSuccess('Đã tạo match thủ công thành công!');
+        setShowCreateModal(false);
+        setSelectedLostItem('');
+        setSelectedFoundItem('');
+        setNotes('');
+        refetch();
+      } else {
+        showError(result.error?.message || 'Tạo match thất bại');
+      }
+    } catch (error) {
+      showError('Có lỗi xảy ra khi tạo match');
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div ref={pageRef} className="matching-management-page">
       <AnimatedBackground intensity={0.1} />
@@ -92,6 +141,13 @@ const MatchingManagementPage = () => {
           <FiTrendingUp className="title-icon" />
           <h1 ref={titleRef} className="page-title">Quản Lý Khớp Đồ</h1>
         </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="btn-create-match"
+        >
+          <FiPlus />
+          Tạo Match Thủ Công
+        </button>
       </div>
 
       <div className="content-container-enhanced">
@@ -234,6 +290,85 @@ const MatchingManagementPage = () => {
           </>
         )}
       </div>
+
+      {/* Create Match Modal */}
+      {showCreateModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Tạo Match Thủ Công</h2>
+              <button
+                className="modal-close"
+                onClick={() => setShowCreateModal(false)}
+              >
+                <FiX />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Chọn Báo Mất *</label>
+                <select
+                  value={selectedLostItem}
+                  onChange={(e) => setSelectedLostItem(e.target.value)}
+                  className="form-select"
+                >
+                  <option value="">-- Chọn báo mất --</option>
+                  {lostItemsData?.data?.map((item) => (
+                    <option key={item._id} value={item._id}>
+                      {item.reportId || item._id.slice(-6)} - {item.itemName} ({item.category})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Chọn Đồ Tìm Được *</label>
+                <select
+                  value={selectedFoundItem}
+                  onChange={(e) => setSelectedFoundItem(e.target.value)}
+                  className="form-select"
+                >
+                  <option value="">-- Chọn đồ tìm được --</option>
+                  {foundItemsData?.data?.map((item) => (
+                    <option key={item._id} value={item._id}>
+                      {item.foundId || item._id.slice(-6)} - {item.itemName} ({item.category})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Ghi chú (tùy chọn)</label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="form-textarea"
+                  rows="3"
+                  placeholder="Nhập ghi chú về match này..."
+                />
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="btn-cancel"
+                onClick={() => setShowCreateModal(false)}
+                disabled={creating}
+              >
+                Hủy
+              </button>
+              <button
+                className="btn-submit"
+                onClick={handleCreateMatch}
+                disabled={creating || !selectedLostItem || !selectedFoundItem}
+              >
+                {creating ? 'Đang tạo...' : 'Tạo Match'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -132,6 +132,59 @@ router.get('/my-reports', authenticateToken, roleCheck('student'), lostItemContr
 
 /**
  * @swagger
+ * /api/lost-items/{id}/verify:
+ *   put:
+ *     summary: Xác minh báo mất (Staff)
+ *     tags: [Lost Items]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Report verified successfully
+ *       404:
+ *         description: Not found
+ */
+router.put('/:id/verify', authenticateToken, roleCheck('staff'), lostItemController.verifyLostItem);
+
+/**
+ * @swagger
+ * /api/lost-items/{id}/reject:
+ *   put:
+ *     summary: Từ chối báo mất (Staff)
+ *     tags: [Lost Items]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Report rejected successfully
+ *       404:
+ *         description: Not found
+ */
+router.put('/:id/reject', authenticateToken, roleCheck('staff'), lostItemController.rejectLostItem);
+
+/**
+ * @swagger
  * /api/lost-items/{id}:
  *   get:
  *     summary: Xem chi tiết báo mất
