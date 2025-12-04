@@ -105,6 +105,59 @@ const lostItemService = {
         error: error.response?.data?.error || 'Failed to delete report'
       };
     }
+  },
+
+  // Staff methods
+  getAllReports: async (page = 1, limit = 20, filters = {}) => {
+    try {
+      const params = new URLSearchParams({
+        page,
+        limit,
+        ...filters
+      });
+      const response = await axios.get(
+        `${API_URL}/lost-items?${params}`,
+        getHeaders()
+      );
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to fetch reports'
+      };
+    }
+  },
+
+  verifyReport: async (reportId, verificationData) => {
+    try {
+      const response = await axios.put(
+        `${API_URL}/lost-items/${reportId}/verify`,
+        verificationData,
+        getHeaders()
+      );
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to verify report'
+      };
+    }
+  },
+
+  rejectReport: async (reportId, rejectionReason) => {
+    try {
+      const response = await axios.put(
+        `${API_URL}/lost-items/${reportId}/reject`,
+        { rejectionReason },
+        getHeaders()
+      );
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to reject report'
+      };
+    }
   }
 };
 

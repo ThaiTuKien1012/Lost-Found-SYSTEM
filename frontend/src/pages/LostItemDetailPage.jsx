@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useFetch } from '../hooks/useFetch';
 import { useNotification } from '../hooks/useNotification';
 import { gsap } from 'gsap';
@@ -27,6 +27,10 @@ import { CATEGORIES, CAMPUSES } from '../utils/constants';
 const LostItemDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get return path from location state or default to /lost-items
+  const returnPath = location.state?.from || '/lost-items';
   const { showSuccess, showError } = useNotification();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
@@ -290,7 +294,7 @@ const LostItemDetailPage = () => {
         const result = await lostItemService.deleteReport(id);
         if (result.success) {
           showSuccess('Xóa báo cáo thành công!');
-          navigate('/lost-items');
+          navigate(returnPath);
         } else {
           showError(result.error?.message || result.error || 'Xóa thất bại');
         }
@@ -336,7 +340,7 @@ const LostItemDetailPage = () => {
         <div className="page-content">
           <div className="error-enhanced">
             <p>{error || 'Không tìm thấy báo cáo'}</p>
-            <Link to="/lost-items" className="btn-primary">
+            <Link to={returnPath} className="btn-primary">
               Quay lại danh sách
             </Link>
           </div>
@@ -354,7 +358,7 @@ const LostItemDetailPage = () => {
       
       <div className="page-content">
         <div ref={headerRef} className="detail-header">
-          <Link to="/lost-items" className="back-button">
+          <Link to={returnPath} className="back-button">
             <FiArrowLeft />
             <span>Quay lại</span>
           </Link>

@@ -28,6 +28,41 @@ router.post('/', authenticateToken, roleCheck('student'), lostItemController.cre
 
 /**
  * @swagger
+ * /api/lost-items:
+ *   get:
+ *     summary: Danh sách báo mất (Staff)
+ *     tags: [Lost Items]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: campus
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: List of lost items
+ */
+router.get('/', authenticateToken, roleCheck('staff'), lostItemController.listLostItems);
+
+/**
+ * @swagger
  * /api/lost-items/search:
  *   get:
  *     summary: Tìm kiếm báo mất (Public)

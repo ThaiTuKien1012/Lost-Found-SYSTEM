@@ -170,6 +170,40 @@ exports.deleteLostItem = async (req, res) => {
   }
 };
 
+exports.listLostItems = async (req, res) => {
+  try {
+    const { status, campus, category, page = 1, limit = 20 } = req.query;
+
+    const query = {};
+
+    if (status) query.status = status;
+    if (campus) query.campus = campus;
+    if (category) query.category = category;
+
+    const skip = (page - 1) * limit;
+
+    const reports = await LostItem.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await LostItem.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: reports,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 exports.searchLostItems = async (req, res) => {
   try {
     const { keyword, category, campus, page = 1, limit = 20 } = req.query;

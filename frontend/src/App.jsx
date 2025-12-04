@@ -11,11 +11,14 @@ import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
 import LostItemsPage from './pages/LostItemsPage';
 import LostItemDetailPage from './pages/LostItemDetailPage';
+import LostItemsManagementPage from './pages/LostItemsManagementPage';
 import FoundItemsPage from './pages/FoundItemsPage';
 import SearchFoundItemsPage from './pages/SearchFoundItemsPage';
 import FoundItemDetailPage from './pages/FoundItemDetailPage';
 import MatchingPage from './pages/MatchingPage';
+import MatchingManagementPage from './pages/MatchingManagementPage';
 import MyTransactionsPage from './pages/MyTransactionsPage';
+import ReturnsManagementPage from './pages/ReturnsManagementPage';
 import ReportsPage from './pages/ReportsPage';
 import ProfilePage from './pages/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -47,19 +50,26 @@ const AppContent = () => {
               />
               
               <Route
-                path="/lost-items"
+                path="/lost-items/management"
                 element={
                   <ProtectedRoute>
-                    <LostItemsPage />
+                    <LostItemsManagementPage />
                   </ProtectedRoute>
                 }
               />
-
               <Route
                 path="/lost-items/:id"
                 element={
                   <ProtectedRoute>
                     <LostItemDetailPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/lost-items"
+                element={
+                  <ProtectedRoute>
+                    <LostItemsPage />
                   </ProtectedRoute>
                 }
               />
@@ -92,6 +102,14 @@ const AppContent = () => {
               />
               
               <Route
+                path="/matching/management"
+                element={
+                  <ProtectedRoute>
+                    <MatchingManagementPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/matching"
                 element={
                   <ProtectedRoute>
@@ -100,6 +118,14 @@ const AppContent = () => {
                 }
               />
 
+              <Route
+                path="/returns/management"
+                element={
+                  <ProtectedRoute>
+                    <ReturnsManagementPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/returns/my-transactions"
                 element={
