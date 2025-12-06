@@ -33,14 +33,24 @@ const matchingSchema = new Schema({
   notes: String,
   status: { 
     type: String, 
-    enum: ['pending', 'confirmed', 'rejected', 'resolved'], 
+    enum: ['pending', 'confirmed', 'rejected', 'completed', 'expired'], 
     default: 'pending', 
     index: true 
   },
   studentResponse: String,
   studentResponseNote: String,
+  confirmedBy: String,
   confirmedAt: Date,
+  confirmNotes: String,
+  completedBy: String,
+  completedAt: Date,
+  completionNotes: String,
   resolvedAt: Date,
+  expiresAt: { 
+    type: Date, 
+    default: () => new Date(+new Date() + 7*24*60*60*1000), // 7 days expiry
+    index: true 
+  },
   createdAt: { 
     type: Date, 
     default: Date.now, 

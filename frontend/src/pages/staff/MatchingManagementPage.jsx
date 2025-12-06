@@ -11,6 +11,7 @@ import {
   FiSearch, 
   FiCheckCircle,
   FiX,
+  FiXCircle,
   FiPlus,
   FiTrendingUp,
   FiClock,
@@ -25,7 +26,7 @@ import { CATEGORIES, CAMPUSES } from '../../utils/constants';
 
 const MatchingManagementPage = () => {
   const { showSuccess, showError, showInfo } = useNotification();
-  const [activeTab, setActiveTab] = useState('create'); // 'create', 'pending', 'confirmed', 'history'
+  const [activeTab, setActiveTab] = useState('create'); // 'create', 'pending', 'confirmed', 'rejected', 'expired', 'completed'
   const [keywordLost, setKeywordLost] = useState('');
   const [keywordFound, setKeywordFound] = useState('');
   const [statusFilterLost, setStatusFilterLost] = useState('pending');
@@ -74,19 +75,29 @@ const MatchingManagementPage = () => {
   );
 
   // Fetch Matches by Status for tabs
-  const { data: pendingMatchesData } = useFetch(
+  const { data: pendingMatchesData, loading: loadingPending, error: errorPending } = useFetch(
     () => matchingService.getMatches(1, 50, 'pending'),
     [activeTab === 'pending']
   );
 
-  const { data: confirmedMatchesData } = useFetch(
+  const { data: confirmedMatchesData, loading: loadingConfirmed, error: errorConfirmed } = useFetch(
     () => matchingService.getMatches(1, 50, 'confirmed'),
     [activeTab === 'confirmed']
   );
 
-  const { data: historyMatchesData } = useFetch(
+  const { data: rejectedMatchesData, loading: loadingRejected, error: errorRejected } = useFetch(
+    () => matchingService.getMatches(1, 50, 'rejected'),
+    [activeTab === 'rejected']
+  );
+
+  const { data: expiredMatchesData, loading: loadingExpired, error: errorExpired } = useFetch(
+    () => matchingService.getMatches(1, 50, 'expired'),
+    [activeTab === 'expired']
+  );
+
+  const { data: completedMatchesData, loading: loadingCompleted, error: errorCompleted } = useFetch(
     () => matchingService.getMatches(1, 50, 'completed'),
-    [activeTab === 'history']
+    [activeTab === 'completed']
   );
 
   useEffect(() => {
@@ -225,13 +236,17 @@ const MatchingManagementPage = () => {
   }) || [];
 
   const calculateStats = () => {
-    if (!matchesData?.data) return { total: 0, pending: 0, confirmed: 0 };
+    if (!matchesData?.data) return { total: 0, pending: 0, confirmed: 0, rejected: 0, expired: 0, completed: 0 };
     
     const matches = matchesData.data;
+    const now = new Date();
     return {
       total: matches.length,
-      pending: matches.filter(m => m.status === 'pending').length,
-      confirmed: matches.filter(m => m.status === 'confirmed').length
+      pending: matches.filter(m => m.status === 'pending' && (!m.expiresAt || new Date(m.expiresAt) > now)).length,
+      confirmed: matches.filter(m => m.status === 'confirmed').length,
+      rejected: matches.filter(m => m.status === 'rejected').length,
+      expired: matches.filter(m => m.status === 'pending' && m.expiresAt && new Date(m.expiresAt) <= now).length,
+      completed: matches.filter(m => m.status === 'completed').length
     };
   };
 
@@ -295,6 +310,45 @@ const MatchingManagementPage = () => {
               <span className="stat-label">Đã Xác Nhận</span>
             </div>
           </div>
+
+          <div 
+            ref={el => statsRef.current[3] = el}
+            className="stat-card-found"
+          >
+            <div className="stat-icon-wrapper" style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' }}>
+              <FiXCircle />
+            </div>
+            <div className="stat-content">
+              <span className="stat-value">{stats.rejected}</span>
+              <span className="stat-label">Bị Từ Chối</span>
+            </div>
+          </div>
+
+          <div 
+            ref={el => statsRef.current[4] = el}
+            className="stat-card-found"
+          >
+            <div className="stat-icon-wrapper" style={{ background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)' }}>
+              <FiClock />
+            </div>
+            <div className="stat-content">
+              <span className="stat-value">{stats.expired}</span>
+              <span className="stat-label">Hết Hạn</span>
+            </div>
+          </div>
+
+          <div 
+            ref={el => statsRef.current[5] = el}
+            className="stat-card-found"
+          >
+            <div className="stat-icon-wrapper" style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}>
+              <FiCheckCircle />
+            </div>
+            <div className="stat-content">
+              <span className="stat-value">{stats.completed}</span>
+              <span className="stat-label">Đã Hoàn Thành</span>
+            </div>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -345,19 +399,49 @@ const MatchingManagementPage = () => {
             Đã Xác Nhận ({stats.confirmed})
           </button>
           <button
-            className={`tab-button ${activeTab === 'history' ? 'active' : ''}`}
-            onClick={() => setActiveTab('history')}
+            className={`tab-button ${activeTab === 'rejected' ? 'active' : ''}`}
+            onClick={() => setActiveTab('rejected')}
             style={{
               padding: '12px 24px',
               border: 'none',
               background: 'transparent',
-              borderBottom: activeTab === 'history' ? '3px solid #2180A0' : '3px solid transparent',
+              borderBottom: activeTab === 'rejected' ? '3px solid #2180A0' : '3px solid transparent',
               cursor: 'pointer',
-              fontWeight: activeTab === 'history' ? '600' : '400',
-              color: activeTab === 'history' ? '#2180A0' : '#666'
+              fontWeight: activeTab === 'rejected' ? '600' : '400',
+              color: activeTab === 'rejected' ? '#2180A0' : '#666'
             }}
           >
-            Lịch Sử
+            Bị Từ Chối ({stats.rejected})
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'expired' ? 'active' : ''}`}
+            onClick={() => setActiveTab('expired')}
+            style={{
+              padding: '12px 24px',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: activeTab === 'expired' ? '3px solid #2180A0' : '3px solid transparent',
+              cursor: 'pointer',
+              fontWeight: activeTab === 'expired' ? '600' : '400',
+              color: activeTab === 'expired' ? '#2180A0' : '#666'
+            }}
+          >
+            Hết Hạn ({stats.expired})
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'completed' ? 'active' : ''}`}
+            onClick={() => setActiveTab('completed')}
+            style={{
+              padding: '12px 24px',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: activeTab === 'completed' ? '3px solid #2180A0' : '3px solid transparent',
+              cursor: 'pointer',
+              fontWeight: activeTab === 'completed' ? '600' : '400',
+              color: activeTab === 'completed' ? '#2180A0' : '#666'
+            }}
+          >
+            Đã Hoàn Thành ({stats.completed})
           </button>
         </div>
 
@@ -648,7 +732,16 @@ const MatchingManagementPage = () => {
           <div className="card">
             <div className="card-body">
               <h3 style={{ marginBottom: '20px' }}>Đang Chờ Xác Nhận ({pendingMatchesData?.data?.length || 0})</h3>
-              {!pendingMatchesData?.data?.length ? (
+              {loadingPending ? (
+                <div className="loading-enhanced">
+                  <div className="spinner"></div>
+                  <p>Đang tải...</p>
+                </div>
+              ) : errorPending ? (
+                <div className="error-enhanced">
+                  <p>{typeof errorPending === 'string' ? errorPending : (errorPending?.message || 'Có lỗi xảy ra')}</p>
+                </div>
+              ) : !pendingMatchesData?.data?.length ? (
                 <div className="empty-state-redesign">
                   <FiClock className="empty-icon-redesign" />
                   <h3>Chưa có match nào đang chờ</h3>
@@ -674,7 +767,16 @@ const MatchingManagementPage = () => {
           <div className="card">
             <div className="card-body">
               <h3 style={{ marginBottom: '20px' }}>Đã Xác Nhận ({confirmedMatchesData?.data?.length || 0})</h3>
-              {!confirmedMatchesData?.data?.length ? (
+              {loadingConfirmed ? (
+                <div className="loading-enhanced">
+                  <div className="spinner"></div>
+                  <p>Đang tải...</p>
+                </div>
+              ) : errorConfirmed ? (
+                <div className="error-enhanced">
+                  <p>{typeof errorConfirmed === 'string' ? errorConfirmed : (errorConfirmed?.message || 'Có lỗi xảy ra')}</p>
+                </div>
+              ) : !confirmedMatchesData?.data?.length ? (
                 <div className="empty-state-redesign">
                   <FiCheckCircle className="empty-icon-redesign" />
                   <h3>Chưa có match nào đã xác nhận</h3>
@@ -695,23 +797,102 @@ const MatchingManagementPage = () => {
           </div>
         )}
 
-        {/* History Tab */}
-        {activeTab === 'history' && (
+        {/* Rejected Tab */}
+        {activeTab === 'rejected' && (
           <div className="card">
             <div className="card-body">
-              <h3 style={{ marginBottom: '20px' }}>Lịch Sử ({historyMatchesData?.data?.length || 0})</h3>
-              {!historyMatchesData?.data?.length ? (
+              <h3 style={{ marginBottom: '20px' }}>Bị Từ Chối ({rejectedMatchesData?.data?.length || 0})</h3>
+              {loadingRejected ? (
+                <div className="loading-enhanced">
+                  <div className="spinner"></div>
+                  <p>Đang tải...</p>
+                </div>
+              ) : errorRejected ? (
+                <div className="error-enhanced">
+                  <p>{typeof errorRejected === 'string' ? errorRejected : (errorRejected?.message || 'Có lỗi xảy ra')}</p>
+                </div>
+              ) : !rejectedMatchesData?.data?.length ? (
                 <div className="empty-state-redesign">
-                  <FiClock className="empty-icon-redesign" />
-                  <h3>Chưa có lịch sử</h3>
+                  <FiXCircle className="empty-icon-redesign" />
+                  <h3>Chưa có match nào bị từ chối</h3>
                 </div>
               ) : (
                 <div className="items-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-                  {historyMatchesData.data.map((match) => (
+                  {rejectedMatchesData.data.map((match) => (
                     <div key={match._id || match.requestId} className="item-card" style={{ padding: '16px', border: '1px solid #e0e0e0', borderRadius: '8px' }}>
                       <h4>{match.foundItem?.itemName || 'N/A'}</h4>
                       <p><strong>Sinh viên:</strong> {match.student?.name || 'N/A'}</p>
-                      <p><strong>Ngày hoàn thành:</strong> {formatDate(match.completedAt)}</p>
+                      <p><strong>Ngày từ chối:</strong> {formatDate(match.updatedAt)}</p>
+                      <p><strong>Lý do:</strong> {match.studentResponseNote || 'N/A'}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Expired Tab */}
+        {activeTab === 'expired' && (
+          <div className="card">
+            <div className="card-body">
+              <h3 style={{ marginBottom: '20px' }}>Hết Hạn ({expiredMatchesData?.data?.length || 0})</h3>
+              {loadingExpired ? (
+                <div className="loading-enhanced">
+                  <div className="spinner"></div>
+                  <p>Đang tải...</p>
+                </div>
+              ) : errorExpired ? (
+                <div className="error-enhanced">
+                  <p>{typeof errorExpired === 'string' ? errorExpired : (errorExpired?.message || 'Có lỗi xảy ra')}</p>
+                </div>
+              ) : !expiredMatchesData?.data?.length ? (
+                <div className="empty-state-redesign">
+                  <FiClock className="empty-icon-redesign" />
+                  <h3>Chưa có match nào hết hạn</h3>
+                </div>
+              ) : (
+                <div className="items-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+                  {expiredMatchesData.data.map((match) => (
+                    <div key={match._id || match.requestId} className="item-card" style={{ padding: '16px', border: '1px solid #e0e0e0', borderRadius: '8px' }}>
+                      <h4>{match.foundItem?.itemName || 'N/A'}</h4>
+                      <p><strong>Sinh viên:</strong> {match.student?.name || 'N/A'}</p>
+                      <p><strong>Ngày tạo:</strong> {formatDate(match.createdAt)}</p>
+                      <p><strong>Hết hạn:</strong> {match.expiresAt ? formatDate(match.expiresAt) : 'N/A'}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Completed Tab */}
+        {activeTab === 'completed' && (
+          <div className="card">
+            <div className="card-body">
+              <h3 style={{ marginBottom: '20px' }}>Đã Hoàn Thành ({completedMatchesData?.data?.length || 0})</h3>
+              {loadingCompleted ? (
+                <div className="loading-enhanced">
+                  <div className="spinner"></div>
+                  <p>Đang tải...</p>
+                </div>
+              ) : errorCompleted ? (
+                <div className="error-enhanced">
+                  <p>{typeof errorCompleted === 'string' ? errorCompleted : (errorCompleted?.message || 'Có lỗi xảy ra')}</p>
+                </div>
+              ) : !completedMatchesData?.data?.length ? (
+                <div className="empty-state-redesign">
+                  <FiCheckCircle className="empty-icon-redesign" />
+                  <h3>Chưa có match nào hoàn thành</h3>
+                </div>
+              ) : (
+                <div className="items-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+                  {completedMatchesData.data.map((match) => (
+                    <div key={match._id || match.requestId} className="item-card" style={{ padding: '16px', border: '1px solid #e0e0e0', borderRadius: '8px' }}>
+                      <h4>{match.foundItem?.itemName || 'N/A'}</h4>
+                      <p><strong>Sinh viên:</strong> {match.student?.name || 'N/A'}</p>
+                      <p><strong>Ngày hoàn thành:</strong> {match.completedAt ? formatDate(match.completedAt) : formatDate(match.updatedAt)}</p>
                       <p><strong>Ghi chú:</strong> {match.completionNotes || 'N/A'}</p>
                     </div>
                   ))}

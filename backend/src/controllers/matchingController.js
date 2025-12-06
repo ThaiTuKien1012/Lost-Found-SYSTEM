@@ -63,6 +63,9 @@ exports.createMatch = async (req, res) => {
     const requestId = idGenerator.generateMatchingRequestId();
 
     // Create matching request
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+
     const matchingRequest = new MatchingRequest({
       requestId,
       lostItemId: lostItemId || null,
@@ -71,7 +74,8 @@ exports.createMatch = async (req, res) => {
       staffId,
       matchReason: matchReason || 'Staff manually matched items',
       notes,
-      status: 'pending'
+      status: 'pending',
+      expiresAt
     });
 
     await matchingRequest.save();
@@ -95,7 +99,13 @@ exports.listMatches = async (req, res) => {
     const { status, page = 1, limit = 20, search, fromDate, toDate, matchedBy } = req.query;
     const query = {};
 
-    if (status) query.status = status;
+    // Handle expired status - matches that are pending but expired
+    if (status === 'expired') {
+      query.status = 'pending';
+      query.expiresAt = { $lte: new Date() };
+    } else if (status) {
+      query.status = status;
+    }
 
     // If staff wants to see only their matches
     if (matchedBy || (req.user && req.user.role === 'staff')) {
@@ -481,8 +491,10 @@ exports.resolveMatch = async (req, res) => {
       });
     }
 
-    matching.status = status || 'resolved';
-    matching.notes = notes || matching.notes;
+    matching.status = status || 'completed';
+    matching.completedBy = req.userId;
+    matching.completedAt = new Date();
+    matching.completionNotes = notes || matching.notes;
     matching.resolvedAt = new Date();
     await matching.save();
 
@@ -512,7 +524,7 @@ exports.resolveMatch = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ 
-      success: false, 
+        success: false,
       error: { code: 'INTERNAL_ERROR', message: error.message } 
     });
   }
