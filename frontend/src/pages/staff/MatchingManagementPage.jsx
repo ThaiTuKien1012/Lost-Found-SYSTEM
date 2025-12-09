@@ -119,8 +119,8 @@ const MatchingManagementPage = () => {
         gsap.fromTo(validRefs,
           { opacity: 0, y: 20, scale: 0.9 },
           { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.1, ease: 'power2.out' }
-        );
-      }
+      );
+    }
     }, 200);
 
     return () => clearTimeout(timer);
@@ -152,7 +152,7 @@ const MatchingManagementPage = () => {
       foundItemsRef.current = [];
       return;
     }
-
+    
     foundItemsRef.current = new Array(foundItemsData.data.length).fill(null);
 
     const timer = setTimeout(() => {
@@ -257,25 +257,25 @@ const MatchingManagementPage = () => {
       <AnimatedBackground />
       <div className="page-content">
         {/* Header */}
-        <div className="page-header-enhanced">
-          <div className="title-wrapper">
-            <FiTrendingUp className="title-icon" />
+      <div className="page-header-enhanced">
+        <div className="title-wrapper">
+          <FiTrendingUp className="title-icon" />
             <h1 className="page-title" ref={titleRef}>Quản Lý Khớp Đồ</h1>
-          </div>
-          <button
-            className="btn-create-match-redesign"
-            onClick={() => setShowCreateModal(true)}
-          >
-            <FiPlus /> Tạo Match Thủ Công
-          </button>
         </div>
+        <button
+            className="btn-create-match-redesign"
+          onClick={() => setShowCreateModal(true)}
+        >
+            <FiPlus /> Tạo Match Thủ Công
+        </button>
+      </div>
 
         {/* Statistics */}
         <div className="found-items-stats-section">
           <div 
             ref={el => statsRef.current[0] = el}
             className="stat-card-found"
-          >
+            >
             <div className="stat-icon-wrapper" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
               <FiTrendingUp />
             </div>
@@ -349,7 +349,7 @@ const MatchingManagementPage = () => {
               <span className="stat-label">Đã Hoàn Thành</span>
             </div>
           </div>
-        </div>
+          </div>
 
         {/* Tabs */}
         <div className="tabs-container" style={{ marginBottom: '20px', borderBottom: '2px solid #e0e0e0' }}>
@@ -428,7 +428,7 @@ const MatchingManagementPage = () => {
           >
             Hết Hạn ({stats.expired})
           </button>
-          <button
+            <button
             className={`tab-button ${activeTab === 'completed' ? 'active' : ''}`}
             onClick={() => setActiveTab('completed')}
             style={{
@@ -442,7 +442,7 @@ const MatchingManagementPage = () => {
             }}
           >
             Đã Hoàn Thành ({stats.completed})
-          </button>
+            </button>
         </div>
 
         {/* Tab Content */}
@@ -487,19 +487,19 @@ const MatchingManagementPage = () => {
             </div>
             <div className="matching-panel-body-redesign">
               {loadingLost ? (
-                <div className="loading-enhanced">
-                  <div className="spinner"></div>
-                  <p>Đang tải...</p>
-                </div>
+          <div className="loading-enhanced">
+            <div className="spinner"></div>
+            <p>Đang tải...</p>
+          </div>
               ) : filteredLostItems.length === 0 ? (
                 <div className="empty-state-redesign">
                   <FiPackage className="empty-icon-redesign" />
                   <p>Không có đồ báo mất nào</p>
-                </div>
-              ) : (
+              </div>
+            ) : (
                 <div className="matching-items-grid-redesign">
                   {filteredLostItems.map((item, index) => (
-                    <div
+                      <div
                       key={item._id}
                       ref={el => lostItemsRef.current[index] = el}
                       className={`matching-item-card-redesign ${selectedLostItem?._id === item._id ? 'selected' : ''}`}
@@ -517,7 +517,7 @@ const MatchingManagementPage = () => {
                       ) : (
                         <div className="matching-item-image-placeholder-redesign">
                           <FiImage className="placeholder-icon-redesign" />
-                        </div>
+                          </div>
                       )}
                       <div className="matching-item-info-redesign">
                         {selectedLostItem?._id === item._id && (
@@ -535,13 +535,13 @@ const MatchingManagementPage = () => {
                           </span>
                         </div>
                         <p className="matching-item-id-redesign">ID: {item.reportId}</p>
-                      </div>
-                    </div>
+                              </div>
+                            </div>
                   ))}
-                </div>
-              )}
-            </div>
-          </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
 
           {/* Found Items Section */}
           <div className="matching-panel-redesign">
@@ -571,7 +571,7 @@ const MatchingManagementPage = () => {
                 <div className="empty-state-redesign">
                   <FiCheckCircle className="empty-icon-redesign" />
                   <p>Không có đồ tìm thấy nào</p>
-                </div>
+                            </div>
               ) : (
                 <div className="matching-items-grid-redesign">
                   {filteredFoundItems.map((item, index) => (
@@ -618,23 +618,23 @@ const MatchingManagementPage = () => {
               )}
             </div>
           </div>
-        </div>
+                  </div>
           </>
         )}
 
-        {/* Create Match Modal */}
-        {showCreateModal && (
+      {/* Create Match Modal */}
+      {showCreateModal && (
           <div className="modal-overlay-redesign" onClick={() => setShowCreateModal(false)}>
             <div className="modal-content-redesign" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header-redesign">
-                <h2>Tạo Match Thủ Công</h2>
-                <button
+              <h2>Tạo Match Thủ Công</h2>
+              <button
                   className="modal-close-redesign"
-                  onClick={() => setShowCreateModal(false)}
-                >
-                  <FiX />
-                </button>
-              </div>
+                onClick={() => setShowCreateModal(false)}
+              >
+                <FiX />
+              </button>
+            </div>
               <div className="modal-body-redesign">
                 <div className="form-group-redesign">
                   <label>Đồ Tìm Thấy *</label>
@@ -654,7 +654,7 @@ const MatchingManagementPage = () => {
                   ) : (
                     <p className="text-muted-redesign">Vui lòng chọn đồ tìm thấy từ danh sách bên phải</p>
                   )}
-                </div>
+              </div>
 
                 <div className="form-group-redesign">
                   <label>Đồ Báo Mất (Tùy chọn)</label>
@@ -694,38 +694,38 @@ const MatchingManagementPage = () => {
                     value={matchReason}
                     onChange={(e) => setMatchReason(e.target.value)}
                   />
-                </div>
+              </div>
 
                 <div className="form-group-redesign">
                   <label>Ghi Chú</label>
-                  <textarea
+                <textarea
                     className="form-textarea-redesign"
                     rows="2"
                     placeholder="Ghi chú thêm (tùy chọn)"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="modal-footer-redesign">
-                <button
-                  className="btn-secondary-redesign"
-                  onClick={() => setShowCreateModal(false)}
-                  disabled={creating}
-                >
-                  Hủy
-                </button>
-                <button
-                  className="btn-primary-redesign"
-                  onClick={handleCreateMatch}
-                  disabled={creating || !selectedFoundItem}
-                >
-                  {creating ? 'Đang tạo...' : 'Tạo Match'}
-                </button>
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
               </div>
             </div>
+              <div className="modal-footer-redesign">
+              <button
+                  className="btn-secondary-redesign"
+                onClick={() => setShowCreateModal(false)}
+                disabled={creating}
+              >
+                Hủy
+              </button>
+              <button
+                  className="btn-primary-redesign"
+                onClick={handleCreateMatch}
+                  disabled={creating || !selectedFoundItem}
+              >
+                {creating ? 'Đang tạo...' : 'Tạo Match'}
+              </button>
+            </div>
           </div>
-        )}
+        </div>
+      )}
 
         {/* Pending Matches Tab */}
         {activeTab === 'pending' && (
@@ -789,12 +789,12 @@ const MatchingManagementPage = () => {
                       <p><strong>Sinh viên:</strong> {match.student?.name || 'N/A'}</p>
                       <p><strong>Ngày xác nhận:</strong> {formatDate(match.confirmedAt)}</p>
                       <p><strong>Ghi chú:</strong> {match.confirmNotes || 'N/A'}</p>
-                    </div>
+              </div>
                   ))}
                 </div>
               )}
-            </div>
-          </div>
+                </div>
+              </div>
         )}
 
         {/* Rejected Tab */}
@@ -826,7 +826,7 @@ const MatchingManagementPage = () => {
                       <p><strong>Lý do:</strong> {match.studentResponseNote || 'N/A'}</p>
                     </div>
                   ))}
-                </div>
+              </div>
               )}
             </div>
           </div>
@@ -898,9 +898,9 @@ const MatchingManagementPage = () => {
                   ))}
                 </div>
               )}
-            </div>
           </div>
-        )}
+        </div>
+      )}
       </div>
     </div>
   );
