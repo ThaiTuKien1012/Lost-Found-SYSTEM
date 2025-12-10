@@ -11,8 +11,8 @@ const matchingSchema = new Schema({
   lostItemId: { 
     type: String, 
     required: false, 
-    index: true, 
-    default: null 
+    index: true,
+    default: null
   },
   foundItemId: { 
     type: String, 

@@ -1,16 +1,6 @@
-:root {
-  --primary-color: #2180A0;
-  --secondary-color: #5E5240;
-  --success-color: #22C55E;
-  --danger-color: #EF4444;
-  --warning-color: #F97316;
-  --info-color: #06B6D4;
-  --bg-primary: #FFFCF9;
-  --bg-secondary: #F5F5F5;
-  --text-primary: #134252;
-  --text-secondary: #626C7C;
-  --border-color: #E5E7EB;
-}
+/* Import CSS Variables and Animations */
+@import './variables.css';
+@import './animations.css';
 
 * {
   margin: 0;

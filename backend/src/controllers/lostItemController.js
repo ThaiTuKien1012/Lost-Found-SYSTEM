@@ -4,16 +4,135 @@ const AuditLog = require('../models/AuditLog');
 
 exports.createLostItem = async (req, res) => {
   try {
-    const reportId = idGenerator.generateLostItemId(req.body.campus);
+    // Validation
+    const { itemName, description, category, color, dateLost, locationLost, campus, phone, images } = req.body;
+
+    // 1. Tên Đồ: 3-100 chars, no HTML, trim
+    if (!itemName || itemName.trim().length < 3 || itemName.trim().length > 100) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Tên đồ vật phải từ 3-100 ký tự' }
+      });
+    }
+
+    // Sanitize HTML from itemName
+    const sanitizedItemName = itemName.trim().replace(/<[^>]*>/g, '');
+
+    // 2. Mô Tả: 10-1000 chars, no HTML, allow \n
+    if (!description || description.trim().length < 10 || description.trim().length > 1000) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Mô tả phải từ 10-1000 ký tự' }
+      });
+    }
+
+    // Sanitize HTML from description (keep \n)
+    const sanitizedDescription = description.trim().replace(/<[^>]*>/g, '');
+
+    // 3. Loại: REQUIRED, enum only
+    const validCategories = ['PHONE', 'WALLET', 'BAG', 'LAPTOP', 'WATCH', 'BOOK', 'KEYS', 'OTHER'];
+    if (!category || !validCategories.includes(category)) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Loại đồ vật không hợp lệ' }
+      });
+    }
+
+    // 4. Màu: Optional, max 50 chars
+    if (color && color.trim().length > 50) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Màu sắc tối đa 50 ký tự' }
+      });
+    }
+
+    // 5. Ngày: No future, warn if >90 days
+    if (!dateLost) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ngày thất lạc là bắt buộc' }
+      });
+    }
+
+    const lostDate = new Date(dateLost);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+
+    if (lostDate > today) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ngày thất lạc không thể là ngày tương lai' }
+      });
+    }
+
+    const daysDiff = Math.floor((today - lostDate) / (1000 * 60 * 60 * 24));
+    const warning = daysDiff > 90 ? 'Cảnh báo: Đã quá 90 ngày kể từ ngày thất lạc' : null;
+
+    // 6. Nơi: Optional, max 200 chars
+    if (locationLost && locationLost.trim().length > 200) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Nơi thất lạc tối đa 200 ký tự' }
+      });
+    }
+
+    // 7. Campus: REQUIRED, enum, pre-fill user's
+    const validCampuses = ['NVH', 'SHTP'];
+    if (!campus || !validCampuses.includes(campus)) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Campus không hợp lệ' }
+      });
+    }
+
+    // 8. Số ĐT: Optional, VN format 09/01, 10-11 digits
+    if (phone && phone.trim()) {
+      const phoneRegex = /^(0[9|1])\d{8,9}$/;
+      if (!phoneRegex.test(phone.trim())) {
+        return res.status(400).json({
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: 'Số điện thoại không đúng định dạng (09/01 + 8-9 số)' }
+        });
+      }
+    }
+
+    // 9. Ảnh: Optional, max 5 files
+    if (images && Array.isArray(images) && images.length > 5) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Tối đa 5 hình ảnh' }
+      });
+    }
+
+    const reportId = idGenerator.generateLostItemId(campus);
 
     const lostItem = new LostItem({
       reportId,
       studentId: req.userId,
-      ...req.body,
+      itemName: sanitizedItemName,
+      description: sanitizedDescription,
+      category,
+      color: color ? color.trim() : '',
+      dateLost: lostDate,
+      locationLost: locationLost ? locationLost.trim() : '',
+      campus,
+      phone: phone ? phone.trim() : '',
+      images: images || [],
       status: 'pending'
     });
 
     await lostItem.save();
+
+    // Return warning if exists
+    const responseData = {
+      success: true,
+      data: { reportId, ...lostItem.toObject() },
+      message: 'Report created successfully'
+    };
+
+    if (warning) {
+      responseData.warning = warning;
+    }
 
     // Audit log
     await AuditLog.create({
@@ -25,11 +144,7 @@ exports.createLostItem = async (req, res) => {
       status: 'success'
     });
 
-    res.status(201).json({
-      success: true,
-      data: { reportId, ...lostItem.toObject() },
-      message: 'Report created successfully'
-    });
+    res.status(201).json(responseData);
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
   }

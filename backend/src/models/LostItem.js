@@ -17,14 +17,16 @@ const lostItemSchema = new Schema({
   itemName: {
     type: String,
     required: true,
+    minlength: 3,
     maxlength: 100,
     trim: true
   },
   description: {
     type: String,
     required: true,
+    minlength: 10,
     maxlength: 1000,
-    minlength: 10
+    trim: true
   },
   category: {
     type: String,
@@ -34,8 +36,10 @@ const lostItemSchema = new Schema({
   },
   color: {
     type: String,
-    required: true,
-    maxlength: 50
+    required: false,
+    maxlength: 50,
+    trim: true,
+    default: ''
   },
   features: [{ type: String, maxlength: 100 }],
   dateLost: {
@@ -45,8 +49,10 @@ const lostItemSchema = new Schema({
   },
   locationLost: {
     type: String,
-    required: true,
-    maxlength: 200
+    required: false,
+    maxlength: 200,
+    trim: true,
+    default: ''
   },
   campus: {
     type: String,
@@ -54,10 +60,21 @@ const lostItemSchema = new Schema({
     required: true,
     index: true
   },
-  images: [String],
+  images: {
+    type: [String],
+    default: [],
+    validate: {
+      validator: function(v) {
+        return v.length <= 5;
+      },
+      message: 'Maximum 5 images allowed'
+    }
+  },
   phone: {
     type: String,
-    required: true
+    required: false,
+    trim: true,
+    default: ''
   },
   status: {
     type: String,

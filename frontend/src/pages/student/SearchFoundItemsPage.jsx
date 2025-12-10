@@ -3,7 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { gsap } from 'gsap';
 import foundItemService from '../../api/foundItemService';
 import AnimatedBackground from '../../components/common/AnimatedBackground';
-import { FiSearch, FiPackage, FiFilter, FiImage, FiEye } from 'react-icons/fi';
+import { 
+  FiSearch, 
+  FiPackage, 
+  FiFilter, 
+  FiImage, 
+  FiEye,
+  FiTag,
+  FiCalendar,
+  FiMapPin
+} from 'react-icons/fi';
+import { CATEGORIES, CAMPUSES } from '../../utils/constants';
+import { getImageUrl, getStatusLabel, getStatusColor } from '../../utils/helpers';
 
 const SearchFoundItemsPage = () => {
   const navigate = useNavigate();
@@ -13,20 +24,7 @@ const SearchFoundItemsPage = () => {
   const [page, setPage] = useState(1);
   const [searchParams, setSearchParams] = useState({});
   const [debouncedKeyword, setDebouncedKeyword] = useState('');
-
-  // Get BASE_URL for static files (without /api)
-  const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '');
-
-  // Convert relative URL to absolute URL for display
-  const getImageUrl = (url) => {
-    if (!url) return null;
-    // If URL already starts with http, use as is
-    if (url.startsWith('http')) return url;
-    // If URL starts with /, prepend BASE_URL
-    if (url.startsWith('/')) return `${BASE_URL}${url}`;
-    // Otherwise, assume it's relative to uploads
-    return `${BASE_URL}/uploads/${url}`;
-  };
+  const [showFilters, setShowFilters] = useState(false);
 
   const pageRef = useRef(null);
   const titleRef = useRef(null);
@@ -50,15 +48,14 @@ const SearchFoundItemsPage = () => {
   // Auto load all found items on initial mount (only once)
   useEffect(() => {
     if (!isInitialized) {
-      // Set initial search params to trigger first fetch
       setSearchParams({ keyword: '', category: '', campus: '' });
       setIsInitialized(true);
     }
-  }, []); // Empty dependency array - only run once
+  }, []);
 
   // Fetch data when searchParams or page changes
   useEffect(() => {
-    if (!isInitialized) return; // Don't fetch until initialized
+    if (!isInitialized) return;
 
     let isCancelled = false;
 
@@ -72,7 +69,7 @@ const SearchFoundItemsPage = () => {
           { 
             category: searchParams.category || '', 
             campus: searchParams.campus || '',
-            status: 'unclaimed' // Only show unclaimed items (chưa được nhận)
+            status: 'unclaimed' // Only show unclaimed items
           }, 
           page, 
           20
@@ -81,7 +78,6 @@ const SearchFoundItemsPage = () => {
         if (isCancelled) return;
 
         if (result && result.success !== false) {
-          // Ensure result has data structure
           setData({
             success: true,
             data: result.data || result.items || [],
@@ -118,7 +114,7 @@ const SearchFoundItemsPage = () => {
     };
   }, [searchParams.keyword, searchParams.category, searchParams.campus, page, isInitialized]);
 
-  // Animation effects - only run on mount and when data changes
+  // Animation effects
   useEffect(() => {
     if (!titleRef.current || !searchRef.current) return;
 
@@ -133,7 +129,7 @@ const SearchFoundItemsPage = () => {
       { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
       '-=0.3'
     );
-  }, []); // Only run once on mount
+  }, []);
 
   // Reset itemsRef when data changes
   useEffect(() => {
@@ -143,7 +139,6 @@ const SearchFoundItemsPage = () => {
   // Animate items when data changes
   useEffect(() => {
     if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
-      // Wait for DOM to update
       setTimeout(() => {
         const validRefs = itemsRef.current.filter(ref => ref !== null && ref !== undefined);
         if (validRefs.length > 0) {
@@ -169,7 +164,6 @@ const SearchFoundItemsPage = () => {
       e.preventDefault();
       e.stopPropagation();
     }
-    // Use current keyword value directly (not debounced) when user explicitly searches
     const searchKeyword = keyword.trim();
     setSearchParams({ keyword: searchKeyword, category, campus });
     setPage(1);
@@ -183,7 +177,6 @@ const SearchFoundItemsPage = () => {
       setCampus(value);
     }
     
-    // Trigger search immediately when filter changes
     setSearchParams({ 
       keyword: searchParams.keyword || debouncedKeyword || keyword, 
       category: filterType === 'category' ? value : category,
@@ -213,73 +206,112 @@ const SearchFoundItemsPage = () => {
     }
   };
 
+  const getCategoryLabel = (categoryValue) => {
+    const cat = CATEGORIES.find(c => c.value === categoryValue);
+    return cat ? cat.label : categoryValue;
+  };
+
+  const getCampusLabel = (campusValue) => {
+    const camp = CAMPUSES.find(c => c.value === campusValue);
+    return camp ? camp.label : campusValue;
+  };
+
   return (
-    <div ref={pageRef} className="search-found-items-page-enhanced">
-      <AnimatedBackground intensity={0.1} />
+    <div ref={pageRef} className="found-items-page-redesign">
+      <AnimatedBackground intensity={0.08} />
       
-      <div className="page-header-enhanced">
-        <div className="title-wrapper">
-          <FiSearch className="title-icon" />
-          <h1 ref={titleRef} className="page-title">Tìm Kiếm Đồ Tìm Thấy</h1>
+      {/* Header */}
+      <div className="page-header-redesign">
+        <div className="title-wrapper-redesign">
+          <div className="title-icon-wrapper">
+            <FiSearch className="title-icon-redesign" />
+          </div>
+          <div>
+            <h1 ref={titleRef} className="page-title-redesign">Tìm Kiếm Đồ Tìm Thấy</h1>
+            <p className="page-subtitle">Tìm kiếm đồ vật đã được tìm thấy và chưa được nhận</p>
+          </div>
         </div>
       </div>
 
-      <div ref={searchRef} className="search-form-enhanced">
-        <form onSubmit={handleSearch} className="search-form">
-          <div className="search-input-group">
-            <FiSearch className="search-icon" />
+      {/* Search and Filter Section */}
+      <div className="found-items-controls-redesign">
+        <div className="search-bar-redesign">
+          <div className="search-input-wrapper">
+            <FiSearch className="search-icon-redesign" />
             <input
+              ref={searchRef}
               type="text"
-              placeholder="Nhập từ khóa tìm kiếm..."
+              placeholder="Tìm kiếm theo tên, mô tả..."
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleSearch(e);
-                }
-              }}
-              className="search-input"
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch(e)}
+              className="search-input-redesign"
             />
-          </div>
-          
-          <div className="filter-group">
-            <select
-              value={category}
-              onChange={(e) => handleFilterChange('category', e.target.value)}
-              className="filter-select"
-            >
-              <option value="">Tất cả loại</option>
-              <option value="PHONE">Điện thoại</option>
-              <option value="WALLET">Ví/Bóp</option>
-              <option value="BAG">Túi xách</option>
-              <option value="LAPTOP">Laptop</option>
-              <option value="WATCH">Đồng hồ</option>
-              <option value="BOOK">Sách</option>
-              <option value="KEYS">Chìa khóa</option>
-              <option value="OTHER">Khác</option>
-            </select>
-
-            <select
-              value={campus}
-              onChange={(e) => handleFilterChange('campus', e.target.value)}
-              className="filter-select"
-            >
-              <option value="">Tất cả campus</option>
-              <option value="NVH">Nam Sài Gòn</option>
-              <option value="SHTP">Saigon Hi-Tech Park</option>
-            </select>
-
-            <button type="submit" className="btn-search">
-              <FiFilter />
+            <button onClick={handleSearch} className="btn-search-redesign">
               Tìm kiếm
             </button>
           </div>
-        </form>
+        </div>
+
+        <button 
+          onClick={() => setShowFilters(!showFilters)}
+          className={`btn-filter-redesign ${showFilters ? 'active' : ''}`}
+        >
+          <FiFilter /> {showFilters ? 'Ẩn bộ lọc' : 'Bộ lọc'}
+        </button>
       </div>
 
-      <div className="content-container-enhanced">
+      {/* Filters Panel */}
+      {showFilters && (
+        <div className="filters-panel-redesign">
+          <div className="filter-group-redesign">
+            <label>Danh mục:</label>
+            <select 
+              value={category} 
+              onChange={(e) => handleFilterChange('category', e.target.value)}
+              className="filter-select-redesign"
+            >
+              <option value="">Tất cả</option>
+              {CATEGORIES.map(cat => (
+                <option key={cat.value} value={cat.value}>{cat.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-group-redesign">
+            <label>Campus:</label>
+            <select 
+              value={campus} 
+              onChange={(e) => handleFilterChange('campus', e.target.value)}
+              className="filter-select-redesign"
+            >
+              <option value="">Tất cả</option>
+              {CAMPUSES.map(camp => (
+                <option key={camp.value} value={camp.value}>{camp.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <button 
+            onClick={() => {
+              setCategory('');
+              setCampus('');
+              setSearchParams({ 
+                keyword: searchParams.keyword || keyword, 
+                category: '', 
+                campus: '' 
+              });
+              setPage(1);
+            }}
+            className="btn-clear-filters-redesign"
+          >
+            Xóa bộ lọc
+          </button>
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="found-items-content-redesign">
         {loading && (
           <div className="loading-enhanced">
             <div className="spinner"></div>
@@ -301,12 +333,12 @@ const SearchFoundItemsPage = () => {
             </button>
           </div>
         )}
-        
+
         {!loading && !error && data && data.data !== undefined && (
           <>
             {(!data.data || data.data.length === 0) ? (
-              <div className="empty-state-enhanced">
-                <FiPackage className="empty-icon" />
+              <div className="empty-state-redesign">
+                <FiPackage className="empty-icon-redesign" />
                 <h3>Không tìm thấy đồ vật nào</h3>
                 <p>
                   {searchParams.keyword || searchParams.category || searchParams.campus
@@ -316,10 +348,16 @@ const SearchFoundItemsPage = () => {
               </div>
             ) : (
               <>
-                <div className="results-count">
-                  Tìm thấy {data.pagination?.total || data.data?.length || 0} kết quả
+                <div className="results-count" style={{ 
+                  marginBottom: '20px', 
+                  fontSize: '14px', 
+                  color: '#666',
+                  fontWeight: 500
+                }}>
+                  Tìm thấy <strong style={{ color: '#667eea' }}>{data.pagination?.total || data.data?.length || 0}</strong> kết quả
                 </div>
-                <div className="items-grid-enhanced">
+                
+                <div className="found-items-grid-redesign">
                   {data.data && Array.isArray(data.data) && data.data.map((item, index) => {
                     if (!item) return null;
                     return (
@@ -328,65 +366,138 @@ const SearchFoundItemsPage = () => {
                         ref={el => {
                           if (el) itemsRef.current[index] = el;
                         }}
-                        className="item-card-enhanced"
+                        className="found-item-card-redesign"
                         onMouseEnter={() => handleCardHover(index, true)}
                         onMouseLeave={() => handleCardHover(index, false)}
+                        onClick={() => {
+                          const itemId = item._id || item.foundId;
+                          if (itemId) {
+                            handleViewDetail(itemId);
+                          }
+                        }}
+                        style={{ cursor: 'pointer' }}
                       >
-                      {/* Image Section */}
-                      <div className="card-image-wrapper">
-                        {item.images && item.images.length > 0 ? (
-                          <img 
-                            src={getImageUrl(item.images[0])} 
-                            alt={item.itemName}
-                            className="card-image"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'flex';
-                            }}
-                          />
-                        ) : null}
-                        <div 
-                          className="card-image-placeholder"
-                          style={{ display: item.images && item.images.length > 0 ? 'none' : 'flex' }}
-                        >
-                          <FiPackage className="placeholder-icon" />
-                        </div>
-                      </div>
-
-                      <div className="card-content">
-                        <div className="card-header">
-                          <h3 className="card-title">{item.itemName || 'Không có tên'}</h3>
-                        </div>
-                        <p className="card-description">{item.description || 'Không có mô tả'}</p>
-                        <div className="card-meta">
-                          <span className="card-category">{item.category || 'N/A'}</span>
-                          <span className="card-color">Màu: {item.color || 'N/A'}</span>
-                          <span className="card-campus">{item.campus || 'N/A'}</span>
-                        </div>
-                        <div className="card-footer">
-                          <div className="card-info">
-                            <span className="card-date">
-                              Tìm thấy: {item.dateFound ? new Date(item.dateFound).toLocaleDateString('vi-VN') : 'N/A'}
-                            </span>
-                            <span className="card-location">
-                              <FiPackage size={14} /> {item.locationFound || 'N/A'}
-                            </span>
-                          </div>
-                          <button
-                            className="btn-view-detail"
-                            onClick={() => {
-                              const itemId = item._id || item.foundId;
-                              if (itemId) {
-                                handleViewDetail(itemId);
-                              }
+                        {/* Image Section */}
+                        <div className="found-item-image-section-redesign">
+                          {item.images && item.images.length > 0 ? (
+                            <img 
+                              src={getImageUrl(item.images[0])} 
+                              alt={item.itemName}
+                              className="found-item-image-redesign"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                if (e.target.nextSibling) {
+                                  e.target.nextSibling.style.display = 'flex';
+                                }
+                              }}
+                            />
+                          ) : (
+                            <div className="found-item-image-placeholder-redesign">
+                              <FiImage className="placeholder-icon-redesign" />
+                            </div>
+                          )}
+                          <div 
+                            className="found-item-status-badge-redesign" 
+                            style={{ 
+                              backgroundColor: getStatusColor(item.status || 'unclaimed').bg,
+                              color: getStatusColor(item.status || 'unclaimed').color,
+                              borderColor: getStatusColor(item.status || 'unclaimed').border
                             }}
                           >
-                            <FiEye size={16} />
-                            Xem chi tiết
-                          </button>
+                            {getStatusLabel(item.status || 'unclaimed')}
+                          </div>
+                        </div>
+
+                        {/* Content Section */}
+                        <div className="found-item-content-redesign">
+                          <div className="found-item-header-redesign">
+                            <h3 className="found-item-title-redesign">{item.itemName || 'Không có tên'}</h3>
+                            {item.foundId && (
+                              <span className="found-item-id-redesign">#{item.foundId}</span>
+                            )}
+                          </div>
+
+                          {item.description && (
+                            <p className="found-item-description-redesign">
+                              {item.description.length > 100 
+                                ? `${item.description.substring(0, 100)}...` 
+                                : item.description}
+                            </p>
+                          )}
+
+                          <div className="found-item-meta-redesign">
+                            <div className="meta-item-redesign">
+                              <FiTag className="meta-icon-redesign" />
+                              <span>{getCategoryLabel(item.category)}</span>
+                            </div>
+                            {item.color && (
+                              <div className="meta-item-redesign">
+                                <span>Màu: {item.color}</span>
+                              </div>
+                            )}
+                            <div className="meta-item-redesign">
+                              <FiMapPin className="meta-icon-redesign" />
+                              <span>{getCampusLabel(item.campus)}</span>
+                            </div>
+                          </div>
+
+                          <div className="found-item-footer-redesign" style={{ 
+                            marginTop: '12px', 
+                            paddingTop: '12px', 
+                            borderTop: '1px solid #f0f0f0',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}>
+                            <div className="found-item-date-redesign" style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '6px',
+                              fontSize: '12px',
+                              color: '#666'
+                            }}>
+                              <FiCalendar size={14} />
+                              <span>
+                                {item.dateFound 
+                                  ? new Date(item.dateFound).toLocaleDateString('vi-VN')
+                                  : 'N/A'}
+                              </span>
+                            </div>
+                            <button
+                              className="btn-view-detail-redesign"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const itemId = item._id || item.foundId;
+                                if (itemId) {
+                                  handleViewDetail(itemId);
+                                }
+                              }}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '12px',
+                                background: '#667eea',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                transition: 'all 0.2s'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.background = '#5568d3';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.background = '#667eea';
+                              }}
+                            >
+                              <FiEye size={14} />
+                              Xem chi tiết
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
                     );
                   })}
                 </div>
@@ -414,4 +525,3 @@ const SearchFoundItemsPage = () => {
 };
 
 export default SearchFoundItemsPage;
-

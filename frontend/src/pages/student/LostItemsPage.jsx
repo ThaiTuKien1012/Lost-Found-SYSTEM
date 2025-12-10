@@ -11,7 +11,7 @@ import { FiPlus, FiX, FiPackage } from 'react-icons/fi';
 
 const LostItemsPage = () => {
   const { user } = useAuth();
-  const { showSuccess, showError } = useNotification();
+  const { showSuccess, showError, showWarning } = useNotification();
   const [showForm, setShowForm] = useState(false);
   const [page, setPage] = useState(1);
 
@@ -62,6 +62,11 @@ const LostItemsPage = () => {
     const result = await lostItemService.createReport(formData);
     if (result.success) {
       showSuccess('Báo cáo đã được tạo thành công!');
+      
+      // Show warning if exists (e.g., date > 90 days)
+      if (result.warning) {
+        showWarning(result.warning);
+      }
       
       // Animate form out
       gsap.to(formRef.current, {

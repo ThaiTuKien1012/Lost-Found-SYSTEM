@@ -1,22 +1,9 @@
-import { format } from 'date-fns';
+/**
+ * General Helper Utilities
+ * Re-export formatters for backward compatibility
+ */
 
-export const formatDate = (date) => {
-  if (!date) return '';
-  try {
-    return format(new Date(date), 'dd/MM/yyyy');
-  } catch (error) {
-    return date;
-  }
-};
-
-export const formatDateTime = (date) => {
-  if (!date) return '';
-  try {
-    return format(new Date(date), 'dd/MM/yyyy HH:mm');
-  } catch (error) {
-    return date;
-  }
-};
+export { formatDate, formatDateTime, formatRelativeTime, formatFileSize, formatPhoneNumber } from './formatters';
 
 export const getStatusColor = (status) => {
   switch (status) {

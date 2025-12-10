@@ -211,6 +211,7 @@ const LoginPage = () => {
               </span>
               <input
                 type="email"
+                autoComplete="off"
                 style={{
                   width: '100%',
                   height: '44px',
@@ -323,6 +324,7 @@ const LoginPage = () => {
               </span>
               <input
                 type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
                 style={{
                   width: '100%',
                   height: '44px',
@@ -349,7 +351,7 @@ const LoginPage = () => {
                   e.target.style.background = 'rgba(255,255,255,0.1)';
                   e.target.style.boxShadow = 'none';
                 }}
-                placeholder="••••••••"
+                placeholder="Nhập mật khẩu"
                 {...register('password')}
               />
               <button

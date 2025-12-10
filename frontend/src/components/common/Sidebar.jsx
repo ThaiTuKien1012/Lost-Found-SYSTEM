@@ -15,7 +15,6 @@ const Sidebar = () => {
     { path: '/found-items/search', label: 'Tìm Kiếm Đồ Tìm Thấy', icon: FiSearch, roles: ['student'] },
     { path: '/matching', label: 'Matching Requests', icon: FiTrendingUp, roles: ['student'] },
     { path: '/matching/management', label: 'Quản Lý Khớp Đồ', icon: FiTrendingUp, roles: ['staff'] },
-    { path: '/security/dashboard', label: 'Thống Kê', icon: FiBarChart2, roles: ['security'] },
     { path: '/security/found-items/list', label: 'Danh Sách Đồ', icon: FiList, roles: ['security'] },
     { path: '/security/ready-to-return', label: 'Đồ Sẵn Sàng Trả', icon: FiCheckCircle, roles: ['security'] },
     { path: '/security/return-history', label: 'Lịch Sử Trả', icon: FiClock, roles: ['security'] },

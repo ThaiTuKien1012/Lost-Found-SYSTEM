@@ -29,7 +29,7 @@ const MatchingManagementPage = () => {
   const [activeTab, setActiveTab] = useState('create'); // 'create', 'pending', 'confirmed', 'rejected', 'expired', 'completed'
   const [keywordLost, setKeywordLost] = useState('');
   const [keywordFound, setKeywordFound] = useState('');
-  const [statusFilterLost, setStatusFilterLost] = useState('pending');
+  const [statusFilterLost, setStatusFilterLost] = useState('verified');
   const [statusFilterFound, setStatusFilterFound] = useState('unclaimed');
   const [campusFilter, setCampusFilter] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -472,7 +472,7 @@ const MatchingManagementPage = () => {
             <div className="matching-panel-header-redesign">
               <div className="panel-title-section">
                 <FiPackage className="panel-icon" />
-                <h2 className="panel-title">Đồ Báo Mất (Pending)</h2>
+                <h2 className="panel-title">Đồ Bị Mất (Verified)</h2>
               </div>
               <div className="search-box-redesign">
                 <FiSearch className="search-icon-redesign" />

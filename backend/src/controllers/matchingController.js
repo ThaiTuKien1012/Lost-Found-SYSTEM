@@ -396,8 +396,7 @@ exports.getConfirmedMatches = async (req, res) => {
     if (user.role === 'security' && user.campus) {
       // We need to get matches where found item is in the same campus
       const foundItems = await FoundItem.find({ 
-        campus: user.campus,
-        status: 'matched'
+        campus: user.campus
       }).select('foundId');
       const foundIds = foundItems.map(item => item.foundId);
       query.foundItemId = { $in: foundIds };
@@ -526,7 +525,7 @@ exports.resolveMatch = async (req, res) => {
     res.status(500).json({ 
         success: false,
       error: { code: 'INTERNAL_ERROR', message: error.message } 
-    });
+      });
   }
 };
 

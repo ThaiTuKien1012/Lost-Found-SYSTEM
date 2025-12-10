@@ -1,0 +1,33 @@
+{
+  "timestamp": "2025-12-09T17:29:44.158Z",
+  "summary": {
+    "total": 2,
+    "passed": 0,
+    "failed": 0,
+    "warnings": 0,
+    "errors": 2,
+    "successRate": "0.00",
+    "duration": "-1765301384.09s"
+  },
+  "results": {
+    "passed": [],
+    "failed": [],
+    "warnings": [],
+    "errors": [
+      {
+        "timestamp": "2025-12-09T17:29:44.156Z",
+        "testId": "AUTH",
+        "status": "ERROR",
+        "message": "Authentication failed",
+        "details": "Invalid credentials"
+      },
+      {
+        "timestamp": "2025-12-09T17:29:44.157Z",
+        "testId": "SETUP",
+        "status": "ERROR",
+        "message": "Authentication failed",
+        "details": "Cannot proceed with tests"
+      }
+    ]
+  }
+}

@@ -25,12 +25,25 @@ export const NotificationProvider = ({ children }) => {
     });
   }, []);
 
+  const showWarning = useCallback((message) => {
+    toast(message, {
+      duration: 5000,
+      position: 'top-right',
+      icon: '⚠️',
+      style: {
+        background: '#fef3c7',
+        color: '#92400e'
+      }
+    });
+  }, []);
+
   return (
     <NotificationContext.Provider
       value={{
         showSuccess,
         showError,
-        showInfo
+        showInfo,
+        showWarning
       }}
     >
       {children}

@@ -3,6 +3,7 @@ import { useFetch } from '../../hooks/useFetch';
 import { useNotification } from '../../hooks/useNotification';
 import { gsap } from 'gsap';
 import foundItemService from '../../api/foundItemService';
+import FoundItemForm from '../../components/found-items/FoundItemForm';
 import AnimatedBackground from '../../components/common/AnimatedBackground';
 import { 
   FiSearch, 
@@ -15,7 +16,9 @@ import {
   FiTag,
   FiImage,
   FiPackage,
-  FiList
+  FiList,
+  FiPlus,
+  FiX
 } from 'react-icons/fi';
 import { formatDate, getImageUrl } from '../../utils/helpers';
 import { CATEGORIES, CAMPUSES } from '../../utils/constants';
@@ -28,10 +31,14 @@ const SecurityFoundItemsListPage = () => {
   const [campusFilter, setCampusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const pageRef = useRef(null);
   const titleRef = useRef(null);
+  const formRef = useRef(null);
   const itemsRef = useRef([]);
+  const buttonRef = useRef(null);
+  const formContainerRef = useRef(null);
 
   const filters = {
     ...(statusFilter && { status: statusFilter }),
@@ -53,6 +60,15 @@ const SecurityFoundItemsListPage = () => {
       { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'back.out(1.7)' }
     );
   }, []);
+
+  useEffect(() => {
+    if (showForm && formContainerRef.current) {
+      gsap.fromTo(formContainerRef.current,
+        { opacity: 0, y: -20, scale: 0.95 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'power2.out' }
+      );
+    }
+  }, [showForm]);
 
   useEffect(() => {
     if (!data?.data || data.data.length === 0) {
@@ -88,6 +104,39 @@ const SecurityFoundItemsListPage = () => {
       }
     } catch (error) {
       showError('Có lỗi xảy ra khi xóa đồ tìm thấy');
+    }
+  };
+
+  const handleCreateFoundItem = async (formData) => {
+    try {
+      const result = await foundItemService.createFoundItem(formData);
+      if (result.success) {
+        showSuccess('Đã thêm đồ tìm thấy thành công!');
+        
+        // Animate form out
+        if (formContainerRef.current) {
+          gsap.to(formContainerRef.current, {
+            opacity: 0,
+            y: -20,
+            scale: 0.95,
+            duration: 0.3,
+            onComplete: () => {
+              setShowForm(false);
+              refetch();
+            }
+          });
+        } else {
+          setShowForm(false);
+          refetch();
+        }
+        return true;
+      } else {
+        showError(result.error?.message || result.error || 'Thêm đồ tìm thấy thất bại');
+        return false;
+      }
+    } catch (error) {
+      showError('Có lỗi xảy ra khi thêm đồ tìm thấy');
+      return false;
     }
   };
 
@@ -144,14 +193,49 @@ const SecurityFoundItemsListPage = () => {
       <AnimatedBackground />
       <div className="page-content">
         <div className="page-header-enhanced">
-          <div className="title-wrapper">
-            <FiList className="title-icon" />
-            <div>
-              <h1 className="page-title" ref={titleRef}>Danh Sách Đồ Tìm Thấy</h1>
-              <p className="page-subtitle">Quản lý và xem danh sách đồ vật tìm thấy</p>
+          <div className="header-content">
+            <div className="title-wrapper">
+              <FiList className="title-icon" />
+              <div>
+                <h1 className="page-title" ref={titleRef}>Danh Sách Đồ Tìm Thấy</h1>
+                <p className="page-subtitle">Quản lý và xem danh sách đồ vật tìm thấy</p>
+              </div>
             </div>
+            <button
+              ref={buttonRef}
+              onClick={() => setShowForm(!showForm)}
+              className="btn-create-enhanced"
+              onMouseEnter={(e) => {
+                gsap.to(e.currentTarget, { scale: 1.05, rotation: showForm ? 0 : 5, duration: 0.2 });
+              }}
+              onMouseLeave={(e) => {
+                gsap.to(e.currentTarget, { scale: 1, rotation: 0, duration: 0.2 });
+              }}
+            >
+              {showForm ? (
+                <>
+                  <FiX />
+                  <span>Đóng Form</span>
+                </>
+              ) : (
+                <>
+                  <FiPlus />
+                  <span>Nhập Đồ Tìm Thấy</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Form Section */}
+        {showForm && (
+          <div 
+            ref={formContainerRef}
+            className="form-container-enhanced"
+          >
+            <FoundItemForm onSubmit={handleCreateFoundItem} />
+          </div>
+        )}
 
         {/* Search and Filters */}
         <div className="found-items-controls-redesign">

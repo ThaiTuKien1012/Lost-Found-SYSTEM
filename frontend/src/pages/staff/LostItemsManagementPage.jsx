@@ -93,6 +93,10 @@ const LostItemsManagementPage = () => {
       const result = await lostItemService.verifyReport(reportId, {});
       if (result.success) {
         showSuccess('Đã xác minh báo cáo thành công!');
+        // Nếu đang filter theo 'pending', chuyển sang 'verified' để hiển thị item vừa xác minh
+        if (statusFilter === 'pending') {
+          setStatusFilter('verified');
+        }
         refetch();
       } else {
         showError(result.error?.message || 'Xác minh thất bại');
