@@ -202,12 +202,13 @@ const LoginPage = () => {
                   left: '16px',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  color: 'rgba(255,255,255,0.7)',
+                  color: 'rgba(255,255,255,0.95)',
                   display: 'flex',
                   alignItems: 'center',
+                  zIndex: 1,
                 }}
               >
-                <FiMail size={18} />
+                <FiMail size={20} />
               </span>
               <input
                 type="email"
@@ -315,12 +316,13 @@ const LoginPage = () => {
                   left: '16px',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  color: 'rgba(255,255,255,0.7)',
+                  color: 'rgba(255,255,255,0.95)',
                   display: 'flex',
                   alignItems: 'center',
+                  zIndex: 1,
                 }}
               >
-                <FiLock size={18} />
+                <FiLock size={20} />
               </span>
               <input
                 type={showPassword ? 'text' : 'password'}

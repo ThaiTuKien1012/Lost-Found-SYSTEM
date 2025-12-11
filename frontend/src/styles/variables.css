@@ -87,8 +87,8 @@
   --line-height-relaxed: 1.75;
 }
 
-/* Dark mode support (optional) */
-@media (prefers-color-scheme: dark) {
+/* Dark mode support (optional) - DISABLED to maintain original light theme */
+/* @media (prefers-color-scheme: dark) {
   :root {
     --bg-primary: #1F2937;
     --bg-secondary: #111827;
@@ -96,5 +96,5 @@
     --text-secondary: #D1D5DB;
     --border-color: #374151;
   }
-}
+} */
 

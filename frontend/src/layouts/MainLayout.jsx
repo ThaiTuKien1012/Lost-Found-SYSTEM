@@ -11,10 +11,12 @@ const MainLayout = ({ children }) => {
   return (
     <div className="app-container">
       <Sidebar />
-      <main className="app-main">
-        {children}
-      </main>
-      <Footer />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <main className="app-main" style={{ flex: 1, overflowY: 'auto' }}>
+          {children}
+        </main>
+        <Footer />
+      </div>
     </div>
   );
 };
