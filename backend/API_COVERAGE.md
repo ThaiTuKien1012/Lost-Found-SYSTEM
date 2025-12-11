@@ -1,6 +1,6 @@
 # 📊 Swagger API Documentation Coverage
 
-## ✅ Tất cả 40 APIs đã được document
+## ✅ Tất cả 46 APIs đã được document
 
 ### Authentication (4 APIs) ✓
 - ✅ POST /api/auth/register
@@ -28,12 +28,14 @@
 - ✅ POST /api/upload/images
 - ✅ DELETE /api/upload/images/:fileId
 
-### Matching (5 APIs) ✓
-- ✅ GET /api/matching/suggestions
-- ✅ POST /api/matching/:matchId/confirm
-- ✅ POST /api/matching/:matchId/reject
-- ✅ GET /api/matching
-- ✅ PUT /api/matching/:matchId/resolve
+### Matching (7 APIs) ✓
+- ✅ POST /api/matching (Tạo match thủ công - Staff)
+- ✅ GET /api/matching (Danh sách matches - Staff/Security)
+- ✅ GET /api/matching/pending (Danh sách pending matches - Student)
+- ✅ POST /api/matching/:matchId/confirm (Xác nhận match - Student)
+- ✅ POST /api/matching/:matchId/reject (Từ chối match - Student)
+- ✅ GET /api/matching/confirmed (Danh sách confirmed matches - Security)
+- ✅ PUT /api/matching/:matchId/resolve (Hoàn tất match - Staff/Security)
 
 ### Returns (5 APIs) ✓
 - ✅ POST /api/returns
@@ -60,8 +62,8 @@
 
 ## 📈 Coverage Statistics
 
-- **Total APIs**: 40
-- **Documented APIs**: 40
+- **Total APIs**: 46
+- **Documented APIs**: 46
 - **Coverage**: 100% ✅
 
 ## 🔍 Verification
@@ -70,15 +72,16 @@
 
 ```
 auth.js:          4 @swagger comments, 4 routes ✓
-lost-items.js:    6 @swagger comments, 6 routes ✓
+lost-items.js:    9 @swagger comments, 9 routes ✓
 found-items.js:   6 @swagger comments, 6 routes ✓
 upload.js:        2 @swagger comments, 2 routes ✓
-matching.js:      5 @swagger comments, 5 routes ✓
+matching.js:      7 @swagger comments, 7 routes ✓
 returns.js:       5 @swagger comments, 5 routes ✓
 reports.js:       7 @swagger comments, 7 routes ✓
 users.js:         5 @swagger comments, 5 routes ✓
+security.js:      1 @swagger comments, 1 route ✓
 ─────────────────────────────────────────────────
-Total:           40 @swagger comments, 40 routes ✓
+Total:           46 @swagger comments, 46 routes ✓
 ```
 
 ## 🎯 Truy cập Swagger UI

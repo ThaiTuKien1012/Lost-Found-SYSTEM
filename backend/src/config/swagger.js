@@ -6,7 +6,7 @@ const options = {
     info: {
       title: 'FPTU Lost & Found System API',
       version: '1.0.0',
-      description: 'API Documentation for FPTU Lost & Found Tracking System - 40 Endpoints',
+      description: 'API Documentation for FPTU Lost & Found Tracking System - 46 Endpoints',
       contact: {
         name: 'FPTU Development Team',
         email: 'support@fptu.edu.vn'
@@ -116,6 +116,10 @@ const options = {
         description: 'File upload endpoints'
       },
       {
+        name: 'Matching',
+        description: 'Matching lost and found items'
+      },
+      {
         name: 'Returns',
         description: 'Return transaction management'
       },
@@ -126,6 +130,10 @@ const options = {
       {
         name: 'Users',
         description: 'User profile and management'
+      },
+      {
+        name: 'Security',
+        description: 'Security role specific endpoints'
       }
     ]
   },
