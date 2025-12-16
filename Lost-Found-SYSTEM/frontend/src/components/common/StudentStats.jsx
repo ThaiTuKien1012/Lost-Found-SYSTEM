@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { useFetch } from '../../hooks/useFetch';
 import { Link } from 'react-router-dom';
 import lostItemService from '../../api/lostItemService';
@@ -39,58 +40,189 @@ const StudentStats = () => {
       label: 'Đã nhận lại',
       value: completedReturns.length,
       icon: FiPackage,
-      color: '#2180A0',
+      color: '#6366F1',
       to: '/returns/my-transactions',
       description: 'Đồ vật đã nhận'
     }
   ];
 
   return (
-    <div className="student-stats-container">
-      <h2 className="stats-title">Tổng quan của bạn</h2>
-      <div className="stats-grid">
+    <motion.div
+      style={{
+        background: '#FFFFFF',
+        borderRadius: '24px',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+        padding: '40px',
+        marginBottom: '24px',
+      }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.1 }}
+    >
+      <h2 style={{
+        fontSize: '20px',
+        fontWeight: 700,
+        color: '#1A1A1A',
+        marginBottom: '24px',
+        letterSpacing: '-0.02em',
+      }}>
+        Tổng quan của bạn
+      </h2>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: '20px',
+        marginBottom: '30px',
+      }}>
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <Link
+            <motion.div
               key={index}
-              to={stat.to}
-              className="stat-card"
-              style={{ '--stat-color': stat.color }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.2 + index * 0.1 }}
             >
-              <div className="stat-icon-wrapper">
-                <Icon className="stat-icon" />
-              </div>
-              <div className="stat-content">
-                <div className="stat-value">{stat.value}</div>
-                <div className="stat-label">{stat.label}</div>
-                <div className="stat-description">{stat.description}</div>
-              </div>
-            </Link>
+              <Link
+                to={stat.to}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                  background: '#FFFFFF',
+                  padding: '24px',
+                  borderRadius: '12px',
+                  border: '1px solid #E5E7EB',
+                  textDecoration: 'none',
+                  color: '#1A1A1A',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = stat.color;
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.08)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#E5E7EB';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '12px',
+                  background: `${stat.color}15`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <Icon style={{
+                    fontSize: '24px',
+                    color: stat.color,
+                  }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{
+                    fontSize: '32px',
+                    fontWeight: 700,
+                    color: '#1A1A1A',
+                    lineHeight: 1,
+                    marginBottom: '8px',
+                  }}>
+                    {stat.value}
+                  </div>
+                  <div style={{
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: '#1A1A1A',
+                    marginBottom: '4px',
+                  }}>
+                    {stat.label}
+                  </div>
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#666666',
+                    fontWeight: 400,
+                  }}>
+                    {stat.description}
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
           );
         })}
       </div>
 
       {/* Show matched items list if any */}
       {matchedItems.length > 0 && (
-        <div className="matched-items-section">
-          <h3 className="section-title">
-            <FiCheckCircle /> Đồ vật đã tìm thấy ({matchedItems.length})
+        <div style={{ marginTop: '32px' }}>
+          <h3 style={{
+            fontSize: '16px',
+            fontWeight: 600,
+            color: '#1A1A1A',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}>
+            <FiCheckCircle style={{ color: '#22C55E' }} /> 
+            Đồ vật đã tìm thấy ({matchedItems.length})
           </h3>
-          <div className="matched-items-list">
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+          }}>
             {matchedItems.slice(0, 3).map((item) => (
               <Link
                 key={item._id || item.reportId}
                 to={`/lost-items/${item._id || item.reportId}`}
-                className="matched-item-card"
+                style={{
+                  background: '#FFFFFF',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  border: '1px solid #E5E7EB',
+                  textDecoration: 'none',
+                  color: '#1A1A1A',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#22C55E';
+                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.08)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#E5E7EB';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
               >
-                <div className="matched-item-info">
-                  <h4>{item.itemName}</h4>
-                  <p className="matched-item-status">
+                <div>
+                  <h4 style={{
+                    fontSize: '15px',
+                    fontWeight: 600,
+                    marginBottom: '4px',
+                    color: '#1A1A1A',
+                  }}>
+                    {item.itemName}
+                  </h4>
+                  <p style={{
+                    fontSize: '13px',
+                    color: '#22C55E',
+                    fontWeight: 500,
+                    margin: 0,
+                  }}>
                     Đã trả lại
                   </p>
                 </div>
-                <div className="matched-item-date">
+                <div style={{
+                  fontSize: '13px',
+                  color: '#666666',
+                  fontWeight: 400,
+                }}>
                   {item.returnedAt
                     ? new Date(item.returnedAt).toLocaleDateString('vi-VN')
                     : 'N/A'}
@@ -98,14 +230,35 @@ const StudentStats = () => {
               </Link>
             ))}
             {matchedItems.length > 3 && (
-              <Link to="/lost-items" className="view-all-link">
+              <Link
+                to="/lost-items"
+                style={{
+                  textAlign: 'center',
+                  padding: '12px',
+                  color: '#2563EB',
+                  textDecoration: 'none',
+                  fontWeight: 500,
+                  border: '1px dashed #E5E7EB',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#2563EB';
+                  e.currentTarget.style.background = 'rgba(37, 99, 235, 0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#E5E7EB';
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
                 Xem tất cả ({matchedItems.length})
               </Link>
             )}
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
 

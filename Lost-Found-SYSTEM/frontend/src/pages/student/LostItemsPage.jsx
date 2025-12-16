@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useFetch } from '../../hooks/useFetch';
 import { useNotification } from '../../hooks/useNotification';
-import { gsap } from 'gsap';
+import { motion } from 'framer-motion';
 import lostItemService from '../../api/lostItemService';
 import LostItemForm from '../../components/lost-items/LostItemForm';
 import LostItemList from '../../components/lost-items/LostItemList';
-import AnimatedBackground from '../../components/common/AnimatedBackground';
 import { FiPlus, FiX, FiPackage } from 'react-icons/fi';
 
 const LostItemsPage = () => {
@@ -15,48 +14,10 @@ const LostItemsPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [page, setPage] = useState(1);
 
-  const pageRef = useRef(null);
-  const headerRef = useRef(null);
-  const titleRef = useRef(null);
-  const buttonRef = useRef(null);
-  const formRef = useRef(null);
-  const listRef = useRef(null);
-
   const { data, loading, error, refetch } = useFetch(
-    () => lostItemService.getMyReports(page),
+    () => lostItemService.getMyReports(page, 100),
     [page]
   );
-
-  useEffect(() => {
-    const tl = gsap.timeline();
-    
-    tl.fromTo(titleRef.current,
-      { opacity: 0, x: -50 },
-      { opacity: 1, x: 0, duration: 0.6, ease: 'power3.out' }
-    )
-    .fromTo(buttonRef.current,
-      { opacity: 0, scale: 0.8, rotation: -180 },
-      { opacity: 1, scale: 1, rotation: 0, duration: 0.5, ease: 'back.out(1.7)' },
-      '-=0.3'
-    );
-
-    if (data && !loading && !error) {
-      gsap.fromTo(listRef.current,
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' },
-        '-=0.2'
-      );
-    }
-  }, [data, loading, error]);
-
-  useEffect(() => {
-    if (showForm && formRef.current) {
-      gsap.fromTo(formRef.current,
-        { opacity: 0, y: -20, scale: 0.95 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'power2.out' }
-      );
-    }
-  }, [showForm]);
 
   const handleCreateReport = async (formData) => {
     const result = await lostItemService.createReport(formData);
@@ -68,32 +29,10 @@ const LostItemsPage = () => {
         showWarning(result.warning);
       }
       
-      // Animate form out
-      gsap.to(formRef.current, {
-        opacity: 0,
-        y: -20,
-        scale: 0.95,
-        duration: 0.3,
-        onComplete: () => {
-          setShowForm(false);
-          // Refetch data instead of reloading the page
-          refetch();
-        }
-      });
+      setShowForm(false);
+      refetch();
     } else {
       showError(result.error?.message || result.error || 'Tạo báo cáo thất bại');
-      
-      // Shake animation on error
-      gsap.to(formRef.current, {
-        x: -10,
-        duration: 0.1,
-        repeat: 5,
-        yoyo: true,
-        ease: 'power2.inOut',
-        onComplete: () => {
-          gsap.set(formRef.current, { x: 0 });
-        }
-      });
     }
   };
 
@@ -102,24 +41,65 @@ const LostItemsPage = () => {
   };
 
   return (
-    <div ref={pageRef} className="lost-items-page-enhanced">
-      <AnimatedBackground intensity={0.1} />
-      
-      <div ref={headerRef} className="page-header-enhanced">
-        <div className="header-content">
-          <div className="title-wrapper">
-            <FiPackage className="title-icon" />
-            <h1 ref={titleRef} className="page-title">Báo Cáo Đồ Thất Lạc</h1>
+    <div style={{
+      minHeight: '100vh',
+      background: '#F5F5F5',
+      padding: '20px',
+      fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
+    }}>
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+      }}>
+        {/* Header */}
+        <motion.div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '24px',
+          }}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+          }}>
+            <FiPackage style={{ fontSize: '24px', color: '#1A1A1A' }} />
+            <h1 style={{
+              fontSize: '24px',
+              fontWeight: 700,
+              color: '#1A1A1A',
+              margin: 0,
+              letterSpacing: '-0.02em',
+            }}>
+              Báo Cáo Đồ Thất Lạc
+            </h1>
           </div>
           <button
-            ref={buttonRef}
             onClick={toggleForm}
-            className="btn-create-enhanced"
+            style={{
+              padding: '12px 24px',
+              borderRadius: '12px',
+              border: 'none',
+              background: showForm ? '#EF4444' : '#000000',
+              color: '#FFFFFF',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s ease',
+            }}
             onMouseEnter={(e) => {
-              gsap.to(e.currentTarget, { scale: 1.05, rotation: 5, duration: 0.2 });
+              e.currentTarget.style.opacity = '0.9';
             }}
             onMouseLeave={(e) => {
-              gsap.to(e.currentTarget, { scale: 1, rotation: 0, duration: 0.2 });
+              e.currentTarget.style.opacity = '1';
             }}
           >
             {showForm ? (
@@ -134,24 +114,58 @@ const LostItemsPage = () => {
               </>
             )}
           </button>
-        </div>
-      </div>
+        </motion.div>
 
-      {showForm && (
-        <div ref={formRef} className="form-container-enhanced">
-          <LostItemForm onSubmit={handleCreateReport} />
-        </div>
-      )}
+        {/* Form */}
+        {showForm && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              marginBottom: '24px',
+            }}
+          >
+            <LostItemForm onSubmit={handleCreateReport} />
+          </motion.div>
+        )}
 
-      <div ref={listRef} className="content-container-enhanced">
+        {/* Content */}
         {loading ? (
-          <div className="loading-enhanced">
-            <div className="spinner"></div>
-            <p>Đang tải...</p>
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: '24px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            padding: '60px',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              border: '4px solid #E5E7EB',
+              borderTop: '4px solid #1A1A1A',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 16px',
+            }}></div>
+            <p style={{ color: '#666666', fontSize: '14px' }}>Đang tải...</p>
           </div>
         ) : error ? (
-          <div className="error-enhanced">
-            <p>{error}</p>
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: '24px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            padding: '40px',
+            textAlign: 'center',
+          }}>
+            <p style={{
+              color: '#EF4444',
+              fontSize: '14px',
+              fontWeight: 500,
+            }}>
+              {error?.error || error?.message || 'Failed to fetch reports'}
+            </p>
           </div>
         ) : (
           <LostItemList

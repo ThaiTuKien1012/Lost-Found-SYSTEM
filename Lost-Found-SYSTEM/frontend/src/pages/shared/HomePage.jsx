@@ -1,20 +1,14 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { Link } from 'react-router-dom';
-import { gsap } from 'gsap';
+import { motion } from 'framer-motion';
 import { FiPackage, FiSearch, FiTrendingUp, FiBarChart2, FiPlus, FiCheckCircle, FiClock } from 'react-icons/fi';
-import AnimatedBackground from '../../components/common/AnimatedBackground';
 import StudentStats from '../../components/common/StudentStats';
 import { useFetch } from '../../hooks/useFetch';
 import reportService from '../../api/reportService';
 
 const HomePage = () => {
   const { user } = useAuth();
-  const heroRef = useRef(null);
-  const titleRef = useRef(null);
-  const subtitleRef = useRef(null);
-  const cardsRef = useRef([]);
-  const statsCardsRef = useRef([]);
 
   // Normalize role to lowercase for comparison
   const userRole = user?.role?.toLowerCase();
@@ -24,65 +18,6 @@ const HomePage = () => {
     () => (userRole === 'staff' || userRole === 'admin') ? reportService.getDashboard() : Promise.resolve({ success: false }),
     [userRole]
   );
-
-
-  useEffect(() => {
-    const tl = gsap.timeline();
-    
-    tl.fromTo(titleRef.current,
-      { opacity: 0, y: -50, scale: 0.8 },
-      { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: 'back.out(1.7)' }
-    )
-    .fromTo(subtitleRef.current,
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' },
-      '-=0.4'
-    );
-
-    // Animate stats cards for Staff/Admin
-    if ((userRole === 'staff' || userRole === 'admin') && statsCardsRef.current.length > 0) {
-      gsap.fromTo(statsCardsRef.current,
-        { opacity: 0, y: 30, scale: 0.9 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.1, ease: 'power2.out' },
-        '-=0.2'
-      );
-    }
-
-    // Animate action cards
-    if (cardsRef.current.length > 0) {
-      gsap.fromTo(cardsRef.current,
-        { opacity: 0, y: 50, rotationY: -15 },
-        { opacity: 1, y: 0, rotationY: 0, duration: 0.6, stagger: 0.15, ease: 'power3.out' },
-        '-=0.3'
-      );
-    }
-
-    // Floating animation for action cards
-    cardsRef.current.forEach((card, index) => {
-      if (card) {
-        gsap.to(card, {
-          y: '+=10',
-          duration: 2 + index * 0.2,
-          ease: 'power1.inOut',
-          repeat: -1,
-          yoyo: true
-        });
-      }
-    });
-  }, [userRole, dashboardData]);
-
-  const handleCardHover = (index, isHovering) => {
-    const card = cardsRef.current[index];
-    if (!card) return;
-
-    gsap.to(card, {
-      scale: isHovering ? 1.05 : 1,
-      y: isHovering ? -10 : 0,
-      rotationY: isHovering ? 5 : 0,
-      duration: 0.3,
-      ease: 'power2.out'
-    });
-  };
 
   const actionCards = [
     userRole === 'student' && {
@@ -108,106 +43,265 @@ const HomePage = () => {
     }
   ].filter(Boolean);
 
-  return (
-    <div className="home-page-enhanced">
-      <AnimatedBackground intensity={0.15} />
-      
-      <div ref={heroRef} className="hero-section-enhanced">
-        <h1 ref={titleRef} className="hero-title">
-          Chào mừng, <span className="highlight">{user?.fullName || 'Người dùng'}</span>!
-        </h1>
-        <p ref={subtitleRef} className="hero-subtitle">
-          Hệ thống tìm kiếm đồ thất lạc FPTU
-        </p>
-      </div>
+  // Student view with login page style
+  if (userRole === 'student') {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: '#F5F5F5',
+        padding: '20px',
+        fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
+      }}>
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+        }}>
+          {/* Welcome Section */}
+          <motion.div
+            style={{
+              background: '#FFFFFF',
+              borderRadius: '24px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+              padding: '40px',
+              marginBottom: '24px',
+              textAlign: 'center',
+            }}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <h1 style={{
+              fontSize: '28px',
+              fontWeight: 700,
+              color: '#1A1A1A',
+              marginBottom: '12px',
+              letterSpacing: '-0.02em',
+              lineHeight: 1.2,
+            }}>
+              Chào mừng, {user?.fullName || 'Người dùng'}!
+            </h1>
+            <p style={{
+              fontSize: '14px',
+              color: '#666666',
+              fontWeight: 400,
+            }}>
+              Hệ thống tìm kiếm đồ thất lạc FPTU
+            </p>
+          </motion.div>
 
-      {userRole === 'student' && (
-        <div className="student-stats-section">
+          {/* Stats Section */}
           <StudentStats />
         </div>
-      )}
+      </div>
+    );
+  }
 
+  // Staff/Admin view
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: '#F5F5F5',
+      padding: '20px',
+      fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
+    }}>
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+      }}>
+        {/* Welcome Section */}
+        <motion.div
+          style={{
+            background: '#FFFFFF',
+            borderRadius: '24px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            padding: '40px',
+            marginBottom: '24px',
+            textAlign: 'center',
+          }}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <h1 style={{
+            fontSize: '28px',
+            fontWeight: 700,
+            color: '#1A1A1A',
+            marginBottom: '12px',
+            letterSpacing: '-0.02em',
+            lineHeight: 1.2,
+          }}>
+            Chào mừng, {user?.fullName || 'Người dùng'}!
+          </h1>
+          <p style={{
+            fontSize: '14px',
+            color: '#666666',
+            fontWeight: 400,
+          }}>
+            Hệ thống tìm kiếm đồ thất lạc FPTU
+          </p>
+        </motion.div>
 
-      {/* Dashboard Stats for Staff/Admin */}
-      {(userRole === 'staff' || userRole === 'admin') && dashboardData?.success && (
-        <div className="staff-dashboard-stats">
-          <div className="stats-grid-enhanced">
-            <div 
-              ref={el => statsCardsRef.current[0] = el}
-              className="stat-card-enhanced stat-blue"
-            >
-              <div className="stat-icon-wrapper">
-                <FiPackage className="stat-icon" />
-              </div>
-              <div className="stat-content">
-                <p className="stat-title">TỔNG BÁO CÁO</p>
-                <p className="stat-value">{dashboardData.data?.totalLost || 0}</p>
-              </div>
+        {/* Dashboard Stats for Staff/Admin */}
+        {(userRole === 'staff' || userRole === 'admin') && dashboardData?.success && (
+          <motion.div
+            style={{
+              background: '#FFFFFF',
+              borderRadius: '24px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+              padding: '40px',
+              marginBottom: '24px',
+            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+          >
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+              gap: '20px',
+            }}>
+              {[
+                { title: 'TỔNG BÁO CÁO', value: dashboardData.data?.totalLost || 0, icon: FiPackage, color: '#6366F1' },
+                { title: 'ĐÃ TÌM THẤY', value: dashboardData.data?.totalFound || 0, icon: FiCheckCircle, color: '#22C55E' },
+                { title: 'ĐÃ TRẢ LẠI', value: dashboardData.data?.totalReturned || 0, icon: FiTrendingUp, color: '#A855F7' },
+                { title: 'TỶ LỆ TRẢ LẠI', value: dashboardData.data?.recoveryRate || '0%', icon: null, color: '#F97316' },
+              ].map((stat, index) => {
+                const Icon = stat.icon;
+                return (
+                  <motion.div
+                    key={index}
+                    style={{
+                      background: '#FFFFFF',
+                      borderRadius: '12px',
+                      padding: '24px',
+                      border: '1px solid #E5E7EB',
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '20px',
+                    }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.2 + index * 0.1 }}
+                  >
+                    {Icon && (
+                      <div style={{
+                        width: '56px',
+                        height: '56px',
+                        borderRadius: '12px',
+                        background: `${stat.color}15`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}>
+                        <Icon style={{ fontSize: '24px', color: stat.color }} />
+                      </div>
+                    )}
+                    <div style={{ flex: 1 }}>
+                      <p style={{
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        color: '#666666',
+                        marginBottom: '8px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                      }}>
+                        {stat.title}
+                      </p>
+                      <p style={{
+                        fontSize: '32px',
+                        fontWeight: 700,
+                        color: '#1A1A1A',
+                        lineHeight: 1,
+                      }}>
+                        {stat.value}
+                      </p>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
+          </motion.div>
+        )}
 
-            <div 
-              ref={el => statsCardsRef.current[1] = el}
-              className="stat-card-enhanced stat-green"
-            >
-              <div className="stat-icon-wrapper">
-                <FiCheckCircle className="stat-icon" />
-              </div>
-              <div className="stat-content">
-                <p className="stat-title">ĐÃ TÌM THẤY</p>
-                <p className="stat-value">{dashboardData.data?.totalFound || 0}</p>
-              </div>
-            </div>
-
-            <div 
-              ref={el => statsCardsRef.current[2] = el}
-              className="stat-card-enhanced stat-purple"
-            >
-              <div className="stat-icon-wrapper">
-                <FiTrendingUp className="stat-icon" />
-              </div>
-              <div className="stat-content">
-                <p className="stat-title">ĐÃ TRẢ LẠI</p>
-                <p className="stat-value">{dashboardData.data?.totalReturned || 0}</p>
-              </div>
-            </div>
-
-            <div 
-              ref={el => statsCardsRef.current[3] = el}
-              className="stat-card-enhanced stat-orange"
-            >
-              <div className="stat-content">
-                <p className="stat-title">TỶ LỆ TRẢ LẠI</p>
-                <p className="stat-value">{dashboardData.data?.recoveryRate || '0%'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="quick-actions-enhanced">
-        {actionCards.map((card, index) => {
-          const Icon = card.icon;
-          return (
-            <Link
-              key={card.to}
-              ref={el => cardsRef.current[index] = el}
-              to={card.to}
-              className="action-card-enhanced"
-              onMouseEnter={() => handleCardHover(index, true)}
-              onMouseLeave={() => handleCardHover(index, false)}
-              style={{ '--card-color': card.color }}
-            >
-              <div className="card-icon-wrapper">
-                <Icon className="card-icon" />
-              </div>
-              <h3 className="card-title">{card.title}</h3>
-              <p className="card-description">{card.description}</p>
-              <div className="card-arrow">
-                <FiPlus />
-              </div>
-            </Link>
-          );
-        })}
+        {/* Action Cards */}
+        {actionCards.length > 0 && (
+          <motion.div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: '20px',
+            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+          >
+            {actionCards.map((card, index) => {
+              const Icon = card.icon;
+              return (
+                <motion.div
+                  key={card.to}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.4 + index * 0.1 }}
+                >
+                  <Link
+                    to={card.to}
+                    style={{
+                      display: 'block',
+                      background: '#FFFFFF',
+                      borderRadius: '12px',
+                      padding: '32px 24px',
+                      border: '1px solid #E5E7EB',
+                      textDecoration: 'none',
+                      color: '#1A1A1A',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = card.color;
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#E5E7EB';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <div style={{
+                      width: '56px',
+                      height: '56px',
+                      borderRadius: '12px',
+                      background: `${card.color}15`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: '16px',
+                    }}>
+                      <Icon style={{ fontSize: '24px', color: card.color }} />
+                    </div>
+                    <h3 style={{
+                      fontSize: '18px',
+                      fontWeight: 600,
+                      color: '#1A1A1A',
+                      marginBottom: '8px',
+                      letterSpacing: '-0.01em',
+                    }}>
+                      {card.title}
+                    </h3>
+                    <p style={{
+                      fontSize: '14px',
+                      color: '#666666',
+                      fontWeight: 400,
+                      margin: 0,
+                    }}>
+                      {card.description}
+                    </p>
+                  </Link>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        )}
       </div>
     </div>
   );

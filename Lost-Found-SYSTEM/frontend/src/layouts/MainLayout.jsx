@@ -9,10 +9,24 @@ import Footer from '../components/common/Footer';
 
 const MainLayout = ({ children }) => {
   return (
-    <div className="app-container">
+    <div style={{
+      display: 'flex',
+      minHeight: '100vh',
+      background: '#F5F5F5',
+    }}>
       <Sidebar />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        <main className="app-main" style={{ flex: 1, overflowY: 'auto' }}>
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        marginLeft: '280px',
+        minHeight: '100vh',
+      }}>
+        <main style={{
+          flex: 1,
+          overflowY: 'auto',
+          background: '#F5F5F5',
+        }}>
           {children}
         </main>
         <Footer />

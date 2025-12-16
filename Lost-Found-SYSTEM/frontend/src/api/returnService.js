@@ -1,7 +1,7 @@
 import axios from 'axios';
 import authService from './authService';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5124/api';
 
 const getHeaders = () => ({
   headers: {
@@ -44,7 +44,7 @@ const returnService = {
   getMyTransactions: async (page = 1, limit = 10) => {
     try {
       const response = await axios.get(
-        `${API_URL}/returns/my-transactions?page=${page}&limit=${limit}`,
+        `${API_URL}/student/returns?page=${page}&limit=${limit}`,
         getHeaders()
       );
       return response.data;

@@ -59,6 +59,9 @@ builder.Services.AddScoped<IStaffSecurityRequestService, StaffSecurityRequestSer
 // Student Services
 builder.Services.AddScoped<IStudentClaimService, StudentClaimService>();
 
+// User Services
+builder.Services.AddScoped<IUserService, UserService>();
+
 // JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
