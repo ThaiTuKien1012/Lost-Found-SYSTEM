@@ -1,0 +1,14 @@
+namespace LostAndFound.Application.DTOs
+{
+    public class SignupDto
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Otp { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string? StudentCode { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? Role { get; set; } // null hoặc rỗng = STUDENT, có thể là STAFF hoặc SECURITY
+    }
+}
+
