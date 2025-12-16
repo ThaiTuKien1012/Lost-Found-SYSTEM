@@ -12,16 +12,29 @@ const getHeaders = () => ({
 const lostItemService = {
   createReport: async (itemData) => {
     try {
+      // Map frontend format to backend format
+      const requestData = {
+        itemName: itemData.itemName,
+        description: itemData.description,
+        category: itemData.category, // PHONE, LAPTOP, etc.
+        color: itemData.color || null,
+        dateLost: itemData.dateLost || null,
+        locationLost: itemData.locationLost || null,
+        campus: itemData.campus, // NVH, SHTP, etc.
+        phone: itemData.phone || null,
+        images: itemData.images || []
+      };
+
       const response = await axios.post(
-        `${API_URL}/lost-items`,
-        itemData,
+        `${API_URL}/student/lost-reports`,
+        requestData,
         getHeaders()
       );
       return response.data;
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Failed to create report'
+        error: error.response?.data?.error || error.response?.data?.message || 'Failed to create report'
       };
     }
   },

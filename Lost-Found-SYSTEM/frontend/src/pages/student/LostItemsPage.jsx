@@ -29,10 +29,11 @@ const LostItemsPage = () => {
         showWarning(result.warning);
       }
       
-      setShowForm(false);
       refetch();
+      return result; // Return để form biết đã thành công
     } else {
       showError(result.error?.message || result.error || 'Tạo báo cáo thất bại');
+      return result; // Return để form biết đã thất bại
     }
   };
 
@@ -116,19 +117,107 @@ const LostItemsPage = () => {
           </button>
         </motion.div>
 
-        {/* Form */}
+        {/* Modal Form */}
         {showForm && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
+          <div
             style={{
-              marginBottom: '24px',
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              padding: '20px',
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowForm(false);
+              }
             }}
           >
-            <LostItemForm onSubmit={handleCreateReport} />
-          </motion.div>
+            <motion.div
+              style={{
+                background: '#FFFFFF',
+                borderRadius: '24px',
+                boxShadow: '0 8px 40px rgba(0, 0, 0, 0.12)',
+                padding: '32px',
+                maxWidth: '600px',
+                width: '100%',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+                position: 'relative',
+              }}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.3 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '24px',
+                paddingBottom: '16px',
+                borderBottom: '1px solid #E5E7EB',
+              }}>
+                <h2 style={{
+                  fontSize: '20px',
+                  fontWeight: 700,
+                  color: '#1A1A1A',
+                  margin: 0,
+                }}>
+                  Tạo Báo Cáo Mới
+                </h2>
+                <button
+                  onClick={() => setShowForm(false)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#666666',
+                    fontSize: '24px',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '8px',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#F5F5F5';
+                    e.currentTarget.style.color = '#1A1A1A';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = '#666666';
+                  }}
+                >
+                  <FiX />
+                </button>
+              </div>
+
+              {/* Form Content */}
+              <div style={{
+                maxHeight: 'calc(90vh - 120px)',
+                overflowY: 'auto',
+                paddingRight: '8px',
+              }}>
+                <LostItemForm 
+                  onSubmit={async (formData) => {
+                    return await handleCreateReport(formData);
+                  }}
+                  onCancel={() => setShowForm(false)}
+                  onSuccess={() => setShowForm(false)}
+                />
+              </div>
+            </motion.div>
+          </div>
         )}
 
         {/* Content */}

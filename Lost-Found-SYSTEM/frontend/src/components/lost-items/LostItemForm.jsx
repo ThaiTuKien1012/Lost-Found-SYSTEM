@@ -6,7 +6,7 @@ import { CATEGORIES, CAMPUSES } from '../../utils/constants';
 import uploadService from '../../api/uploadService';
 import { FiX } from 'react-icons/fi';
 
-const LostItemForm = ({ onSubmit }) => {
+const LostItemForm = ({ onSubmit, onCancel, onSuccess }) => {
   const { showError, showSuccess, showWarning } = useNotification();
   const { user } = useAuth();
   const [images, setImages] = useState([]); // URLs từ server
@@ -107,11 +107,27 @@ const LostItemForm = ({ onSubmit }) => {
           images: images
         };
 
-        await onSubmit(sanitizedData);
-        // Reset images sau khi submit thành công
-        setImages([]);
-        setPreviewImages([]);
-        setDateWarning(null);
+        const result = await onSubmit(sanitizedData);
+        // Reset form sau khi submit thành công
+        if (result?.success) {
+          setValues({
+            itemName: '',
+            description: '',
+            category: '',
+            color: '',
+            dateLost: '',
+            locationLost: '',
+            campus: user?.campus || 'NVH',
+            phone: '',
+            images: []
+          });
+          setImages([]);
+          setPreviewImages([]);
+          setDateWarning(null);
+          if (onSuccess) {
+            onSuccess();
+          }
+        }
       } catch (error) {
         showError(error.message);
       }
@@ -264,9 +280,25 @@ const LostItemForm = ({ onSubmit }) => {
   ];
 
   return (
-    <form onSubmit={handleSubmit} className="lost-item-form">
-      <div className="form-group">
-        <label>Tên Đồ Vật</label>
+    <form 
+      onSubmit={handleSubmit}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px',
+        fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
+      }}
+    >
+      <div>
+        <label style={{
+          display: 'block',
+          fontSize: '14px',
+          fontWeight: 600,
+          color: '#1A1A1A',
+          marginBottom: '8px',
+        }}>
+          Tên Đồ Vật
+        </label>
         <input
           type="text"
           name="itemName"
@@ -276,14 +308,32 @@ const LostItemForm = ({ onSubmit }) => {
           maxLength={100}
           required
           placeholder="Tối thiểu 3 ký tự, tối đa 100 ký tự"
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            border: '1px solid #E5E7EB',
+            fontSize: '14px',
+            color: '#1A1A1A',
+            background: '#FFFFFF',
+            boxSizing: 'border-box',
+          }}
         />
-        <small style={{ color: '#666', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+        <small style={{ color: '#666666', fontSize: '12px', display: 'block', marginTop: '4px' }}>
           {values.itemName.length}/100 ký tự
         </small>
       </div>
 
-      <div className="form-group">
-        <label>Mô Tả</label>
+      <div>
+        <label style={{
+          display: 'block',
+          fontSize: '14px',
+          fontWeight: 600,
+          color: '#1A1A1A',
+          marginBottom: '8px',
+        }}>
+          Mô Tả
+        </label>
         <textarea
           name="description"
           value={values.description}
@@ -293,20 +343,55 @@ const LostItemForm = ({ onSubmit }) => {
           maxLength={1000}
           required
           placeholder="Tối thiểu 10 ký tự, tối đa 1000 ký tự"
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            border: '1px solid #E5E7EB',
+            fontSize: '14px',
+            color: '#1A1A1A',
+            background: '#FFFFFF',
+            boxSizing: 'border-box',
+            resize: 'vertical',
+            fontFamily: 'inherit',
+          }}
         />
-        <small style={{ color: '#666', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+        <small style={{ color: '#666666', fontSize: '12px', display: 'block', marginTop: '4px' }}>
           {values.description.length}/1000 ký tự
         </small>
       </div>
 
-      <div className="form-row">
-        <div className="form-group">
-          <label>Loại Đồ Vật</label>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '16px',
+      }}>
+        <div>
+          <label style={{
+            display: 'block',
+            fontSize: '14px',
+            fontWeight: 600,
+            color: '#1A1A1A',
+            marginBottom: '8px',
+          }}>
+            Loại Đồ Vật
+          </label>
           <select
             name="category"
             value={values.category}
             onChange={handleChange}
             required
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              border: '1px solid #E5E7EB',
+              fontSize: '14px',
+              color: '#1A1A1A',
+              background: '#FFFFFF',
+              boxSizing: 'border-box',
+              cursor: 'pointer',
+            }}
           >
             <option value="">Chọn loại</option>
             {CATEGORIES.map(cat => (
@@ -315,8 +400,16 @@ const LostItemForm = ({ onSubmit }) => {
           </select>
         </div>
 
-        <div className="form-group">
-          <label>Màu Sắc <span style={{ color: '#999', fontSize: '12px' }}>(Tùy chọn)</span></label>
+        <div>
+          <label style={{
+            display: 'block',
+            fontSize: '14px',
+            fontWeight: 600,
+            color: '#1A1A1A',
+            marginBottom: '8px',
+          }}>
+            Màu Sắc <span style={{ color: '#9CA3AF', fontSize: '12px', fontWeight: 400 }}>(Tùy chọn)</span>
+          </label>
           <input
             type="text"
             name="color"
@@ -324,13 +417,35 @@ const LostItemForm = ({ onSubmit }) => {
             onChange={handleChange}
             maxLength={50}
             placeholder="Ví dụ: Đen, Trắng, Xanh..."
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              border: '1px solid #E5E7EB',
+              fontSize: '14px',
+              color: '#1A1A1A',
+              background: '#FFFFFF',
+              boxSizing: 'border-box',
+            }}
           />
         </div>
       </div>
 
-      <div className="form-row">
-        <div className="form-group">
-          <label>Ngày Thất Lạc</label>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '16px',
+      }}>
+        <div>
+          <label style={{
+            display: 'block',
+            fontSize: '14px',
+            fontWeight: 600,
+            color: '#1A1A1A',
+            marginBottom: '8px',
+          }}>
+            Ngày Thất Lạc
+          </label>
           <input
             type="date"
             name="dateLost"
@@ -338,16 +453,34 @@ const LostItemForm = ({ onSubmit }) => {
             onChange={handleDateChange}
             max={new Date().toISOString().split('T')[0]}
             required
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              border: '1px solid #E5E7EB',
+              fontSize: '14px',
+              color: '#1A1A1A',
+              background: '#FFFFFF',
+              boxSizing: 'border-box',
+            }}
           />
           {dateWarning && (
-            <p style={{ color: '#f59e0b', fontSize: '12px', marginTop: '4px' }}>
+            <p style={{ color: '#F59E0B', fontSize: '12px', marginTop: '4px', fontWeight: 500 }}>
               ⚠️ {dateWarning}
             </p>
           )}
         </div>
 
-        <div className="form-group">
-          <label>Nơi Thất Lạc <span style={{ color: '#999', fontSize: '12px' }}>(Tùy chọn)</span></label>
+        <div>
+          <label style={{
+            display: 'block',
+            fontSize: '14px',
+            fontWeight: 600,
+            color: '#1A1A1A',
+            marginBottom: '8px',
+          }}>
+            Nơi Thất Lạc <span style={{ color: '#9CA3AF', fontSize: '12px', fontWeight: 400 }}>(Tùy chọn)</span>
+          </label>
           <input
             type="text"
             name="locationLost"
@@ -355,18 +488,51 @@ const LostItemForm = ({ onSubmit }) => {
             onChange={handleChange}
             maxLength={200}
             placeholder="Ví dụ: Phòng A101, Tầng 1..."
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              border: '1px solid #E5E7EB',
+              fontSize: '14px',
+              color: '#1A1A1A',
+              background: '#FFFFFF',
+              boxSizing: 'border-box',
+            }}
           />
         </div>
       </div>
 
-      <div className="form-row">
-        <div className="form-group">
-          <label>Campus</label>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '16px',
+      }}>
+        <div>
+          <label style={{
+            display: 'block',
+            fontSize: '14px',
+            fontWeight: 600,
+            color: '#1A1A1A',
+            marginBottom: '8px',
+          }}>
+            Campus
+          </label>
           <select
             name="campus"
             value={values.campus}
             onChange={handleChange}
             required
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              border: '1px solid #E5E7EB',
+              fontSize: '14px',
+              color: '#1A1A1A',
+              background: '#FFFFFF',
+              boxSizing: 'border-box',
+              cursor: 'pointer',
+            }}
           >
             {CAMPUSES.map(campus => (
               <option key={campus.value} value={campus.value}>{campus.label}</option>
@@ -374,8 +540,16 @@ const LostItemForm = ({ onSubmit }) => {
           </select>
         </div>
 
-        <div className="form-group">
-          <label>Số Điện Thoại <span style={{ color: '#999', fontSize: '12px' }}>(Tùy chọn)</span></label>
+        <div>
+          <label style={{
+            display: 'block',
+            fontSize: '14px',
+            fontWeight: 600,
+            color: '#1A1A1A',
+            marginBottom: '8px',
+          }}>
+            Số Điện Thoại <span style={{ color: '#9CA3AF', fontSize: '12px', fontWeight: 400 }}>(Tùy chọn)</span>
+          </label>
           <input
             type="tel"
             name="phone"
@@ -383,15 +557,33 @@ const LostItemForm = ({ onSubmit }) => {
             onChange={handleChange}
             placeholder="0901234567 hoặc 0123456789"
             pattern="^(0[9|1])\d{8,9}$"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              border: '1px solid #E5E7EB',
+              fontSize: '14px',
+              color: '#1A1A1A',
+              background: '#FFFFFF',
+              boxSizing: 'border-box',
+            }}
           />
-          <small style={{ color: '#666', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+          <small style={{ color: '#666666', fontSize: '12px', display: 'block', marginTop: '4px' }}>
             Định dạng: 09/01 + 8-9 số
           </small>
         </div>
       </div>
 
-      <div className="form-group">
-        <label>Hình Ảnh <span style={{ color: '#999', fontSize: '12px' }}>(Tùy chọn, tối đa 5 file, mỗi file 5MB)</span></label>
+      <div>
+        <label style={{
+          display: 'block',
+          fontSize: '14px',
+          fontWeight: 600,
+          color: '#1A1A1A',
+          marginBottom: '8px',
+        }}>
+          Hình Ảnh <span style={{ color: '#9CA3AF', fontSize: '12px', fontWeight: 400 }}>(Tùy chọn, tối đa 5 file, mỗi file 5MB)</span>
+        </label>
         <input
           ref={fileInputRef}
           type="file"
@@ -399,10 +591,25 @@ const LostItemForm = ({ onSubmit }) => {
           accept="image/*"
           onChange={handleImageSelect}
           disabled={uploading || images.length >= 5}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            border: '1px solid #E5E7EB',
+            fontSize: '14px',
+            color: '#1A1A1A',
+            background: '#FFFFFF',
+            boxSizing: 'border-box',
+            cursor: uploading || images.length >= 5 ? 'not-allowed' : 'pointer',
+          }}
         />
-        {uploading && <p style={{ color: '#666', fontSize: '14px', marginTop: '8px' }}>Đang upload...</p>}
+        {uploading && (
+          <p style={{ color: '#666666', fontSize: '14px', marginTop: '8px' }}>
+            Đang upload...
+          </p>
+        )}
         {images.length >= 5 && (
-          <p style={{ color: '#f59e0b', fontSize: '12px', marginTop: '4px' }}>
+          <p style={{ color: '#F59E0B', fontSize: '12px', marginTop: '4px', fontWeight: 500 }}>
             ⚠️ Đã đạt tối đa 5 hình ảnh
           </p>
         )}
@@ -427,7 +634,7 @@ const LostItemForm = ({ onSubmit }) => {
                       height: '100px',
                       objectFit: 'cover',
                       borderRadius: '8px',
-                      border: '1px solid #ddd'
+                      border: '1px solid #E5E7EB'
                     }}
                     onError={(e) => {
                       e.target.style.display = 'none';
@@ -440,7 +647,7 @@ const LostItemForm = ({ onSubmit }) => {
                       position: 'absolute',
                       top: '5px',
                       right: '5px',
-                      background: 'rgba(255, 0, 0, 0.8)',
+                      background: 'rgba(239, 68, 68, 0.9)',
                       color: 'white',
                       border: 'none',
                       borderRadius: '50%',
@@ -450,7 +657,14 @@ const LostItemForm = ({ onSubmit }) => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      padding: 0
+                      padding: 0,
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(239, 68, 68, 1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(239, 68, 68, 0.9)';
                     }}
                   >
                     <FiX size={14} />
@@ -462,9 +676,66 @@ const LostItemForm = ({ onSubmit }) => {
         )}
       </div>
 
-      <button type="submit" className="btn btn-primary" disabled={uploading}>
-        Tạo Báo Cáo
-      </button>
+      <div style={{
+        display: 'flex',
+        gap: '12px',
+        marginTop: '8px',
+      }}>
+        <button 
+          type="submit" 
+          disabled={uploading}
+          style={{
+            flex: 1,
+            padding: '12px 24px',
+            borderRadius: '12px',
+            border: 'none',
+            background: uploading ? '#9CA3AF' : '#000000',
+            color: '#FFFFFF',
+            fontSize: '14px',
+            fontWeight: 600,
+            cursor: uploading ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            if (!uploading) {
+              e.currentTarget.style.opacity = '0.9';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!uploading) {
+              e.currentTarget.style.opacity = '1';
+            }
+          }}
+        >
+          {uploading ? 'Đang xử lý...' : 'Tạo Báo Cáo'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            // Reset form sẽ được xử lý bởi parent component
+            if (onCancel) onCancel();
+          }}
+          style={{
+            padding: '12px 24px',
+            borderRadius: '12px',
+            border: '1px solid #E5E7EB',
+            background: '#FFFFFF',
+            color: '#1A1A1A',
+            fontSize: '14px',
+            fontWeight: 500,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#F5F5F5';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#FFFFFF';
+          }}
+        >
+          Hủy
+        </button>
+      </div>
     </form>
   );
 };
