@@ -104,15 +104,22 @@ namespace LostAndFound.Infrastructure.Services
                 .Include(r => r.Student)
                 .FirstAsync(r => r.Id == report.Id);
 
+            if (created.Student == null)
+                throw new InvalidOperationException($"Student with ID {studentId} not found");
+            if (created.Campus == null)
+                throw new InvalidOperationException($"Campus with ID {dto.CampusId} not found");
+            if (created.ItemCategory == null)
+                throw new InvalidOperationException($"ItemCategory with ID {dto.ItemCategoryId} not found");
+
             return new StudentLostReportResponseDto
             {
                 Id = created.Id,
                 StudentId = created.StudentId,
-                StudentName = created.Student.FullName,
+                StudentName = created.Student.FullName ?? "N/A",
                 CampusId = created.CampusId,
-                CampusName = created.Campus.Name,
+                CampusName = created.Campus.Name ?? "N/A",
                 ItemCategoryId = created.ItemCategoryId,
-                ItemCategoryName = created.ItemCategory.Name,
+                ItemCategoryName = created.ItemCategory.Name ?? "N/A",
                 Title = created.Title,
                 Description = created.Description,
                 LostTime = created.LostTime,
@@ -120,7 +127,7 @@ namespace LostAndFound.Infrastructure.Services
                 Status = created.Status,
                 CreatedAt = created.CreatedAt,
                 UpdatedAt = created.UpdatedAt,
-                ImageUrl = created.ImageUrl // ← THÊM DÒNG MỚI
+                ImageUrl = created.ImageUrl
             };
         }
 

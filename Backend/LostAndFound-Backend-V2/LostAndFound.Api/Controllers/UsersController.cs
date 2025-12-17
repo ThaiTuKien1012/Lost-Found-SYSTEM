@@ -18,7 +18,17 @@ namespace LostAndFound.Api.Controllers
             _userService = userService;
         }
 
+        /// <summary>
+        /// Lấy thông tin profile của user hiện tại
+        /// </summary>
+        /// <returns>Thông tin profile của user</returns>
+        /// <response code="200">Trả về profile thành công</response>
+        /// <response code="401">Không có quyền truy cập</response>
+        /// <response code="404">Không tìm thấy profile</response>
         [HttpGet("profile")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetProfile()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -36,7 +46,18 @@ namespace LostAndFound.Api.Controllers
             return Ok(new { success = true, data = profile });
         }
 
+        /// <summary>
+        /// Cập nhật thông tin profile của user hiện tại
+        /// </summary>
+        /// <param name="updateDto">Thông tin cập nhật (FullName, PhoneNumber)</param>
+        /// <returns>Profile đã được cập nhật</returns>
+        /// <response code="200">Cập nhật profile thành công</response>
+        /// <response code="400">Dữ liệu không hợp lệ</response>
+        /// <response code="401">Không có quyền truy cập</response>
         [HttpPut("profile")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto updateDto)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -54,7 +75,18 @@ namespace LostAndFound.Api.Controllers
             return Ok(new { success = true, data = updatedProfile, message = "Cập nhật profile thành công" });
         }
 
+        /// <summary>
+        /// Đổi mật khẩu của user hiện tại
+        /// </summary>
+        /// <param name="changePasswordDto">Thông tin đổi mật khẩu (CurrentPassword, NewPassword)</param>
+        /// <returns>Kết quả đổi mật khẩu</returns>
+        /// <response code="200">Đổi mật khẩu thành công</response>
+        /// <response code="400">Mật khẩu hiện tại không đúng hoặc mật khẩu mới không hợp lệ</response>
+        /// <response code="401">Không có quyền truy cập</response>
         [HttpPost("change-password")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto changePasswordDto)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

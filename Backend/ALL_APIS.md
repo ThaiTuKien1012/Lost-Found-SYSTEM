@@ -1,9 +1,9 @@
-# 📡 Danh sách đầy đủ 51 APIs trong branch merge-V2
+# 📡 Danh sách đầy đủ 57 APIs trong branch merge-V2
 
 ## ✅ Backend đã chạy thành công!
 
 - **URL:** https://localhost:7259/swagger
-- **Tổng số endpoints:** 51 APIs (vượt mức yêu cầu 40 APIs!)
+- **Tổng số endpoints:** 57 APIs (vượt mức yêu cầu 40 APIs!)
 - **Status:** ✅ Running
 
 ---
@@ -89,13 +89,25 @@
 50. `GET /api/student/claims/{id}` - Lấy chi tiết claim
 51. `DELETE /api/student/claims/{id}` - Xóa claim
 
+### 📝 Student Lost Reports (2 APIs)
+52. `GET /api/student/lost-reports` - Lấy danh sách báo cáo đồ thất lạc của tôi
+53. `POST /api/student/lost-reports` - Tạo báo cáo đồ thất lạc mới
+
+### 🔄 Student Returns (1 API)
+54. `GET /api/student/returns` - Lấy danh sách giao dịch nhận lại đồ
+
+### 👤 Users (3 APIs)
+55. `GET /api/users/profile` - Lấy thông tin profile của user hiện tại
+56. `PUT /api/users/profile` - Cập nhật profile
+57. `POST /api/users/change-password` - Đổi mật khẩu
+
 ---
 
 ## 🎯 Tổng kết
 
-- **Tổng số APIs:** 51 endpoints
+- **Tổng số APIs:** 57 endpoints
 - **Yêu cầu ban đầu:** 40 APIs
-- **Vượt mức:** +11 APIs (127.5%)
+- **Vượt mức:** +17 APIs (142.5%)
 
 ## 📊 Phân loại theo chức năng
 
@@ -104,7 +116,8 @@
 - **Notifications:** 3 APIs
 - **Security Operations:** 12 APIs (Received Items + Verification + Found Items)
 - **Staff Operations:** 12 APIs (Claims + Found Items + Lost Reports + Return + Security Requests)
-- **Student Operations:** 5 APIs (Claims)
+- **Student Operations:** 8 APIs (Claims + Lost Reports + Returns)
+- **User Management:** 3 APIs (Profile + Change Password)
 - **Return Receipts:** 4 APIs
 - **Other:** 5 APIs
 

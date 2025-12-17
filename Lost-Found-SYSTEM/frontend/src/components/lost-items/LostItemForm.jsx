@@ -83,7 +83,7 @@ const LostItemForm = ({ onSubmit, onCancel, onSuccess }) => {
 
         // 8. Số ĐT: Optional, VN format 09/01, 10-11 digits
         if (formData.phone && formData.phone.trim()) {
-          const phoneRegex = /^(0[9|1])\d{8,9}$/;
+          const phoneRegex = /^(0[91])\d{8,9}$/;
           if (!phoneRegex.test(formData.phone.trim())) {
             showError('Số điện thoại không đúng định dạng (09/01 + 8-9 số)');
             return;
@@ -556,7 +556,7 @@ const LostItemForm = ({ onSubmit, onCancel, onSuccess }) => {
             value={values.phone}
             onChange={handleChange}
             placeholder="0901234567 hoặc 0123456789"
-            pattern="^(0[9|1])\d{8,9}$"
+            pattern="^(0[91])\d{8,9}$"
             style={{
               width: '100%',
               padding: '12px 16px',

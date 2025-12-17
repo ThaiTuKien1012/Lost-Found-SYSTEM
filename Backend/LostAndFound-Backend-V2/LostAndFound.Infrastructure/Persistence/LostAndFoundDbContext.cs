@@ -448,7 +448,7 @@ public partial class LostAndFoundDbContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("image_url"); // ← THÊM MAPPING MỚI
 
-            entity.HasOne(d => d.Campus).WithMany()
+            entity.HasOne(d => d.Campus).WithMany(p => p.StudentLostReports)
                 .HasForeignKey(d => d.CampusId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__student_l__campu__46E78A0C");
