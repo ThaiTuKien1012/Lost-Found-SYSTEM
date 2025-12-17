@@ -42,55 +42,75 @@ namespace LostAndFound.Api.Controllers
 
             try
             {
-                var receipts = await _db.StaffReturnReceipts
+                // Use a single query with proper Select to avoid Include issues
+                var receiptsQuery = _db.StaffReturnReceipts
                     .AsNoTracking()
                     .Where(r => r.StudentId == studentId)
-                    .Include(r => r.Claim)
-                    .Include(r => r.FoundItem)
-                        .ThenInclude(fi => fi.ItemCategory)
-                    .Include(r => r.FoundItem)
-                        .ThenInclude(fi => fi.Campus)
-                    .Include(r => r.Staff)
-                    .OrderByDescending(r => r.ReturnedAt ?? r.Claim.CreatedAt)
+                    .Select(r => new
+                    {
+                        r.Id,
+                        r.ClaimId,
+                        r.FoundItemId,
+                        r.ReturnedAt,
+                        r.ConfirmedFullName,
+                        r.DocumentNumber,
+                        r.PhoneNumber,
+                        ClaimCreatedAt = r.Claim.CreatedAt,
+                        StaffName = r.Staff.FullName,
+                        FoundItemDescription = r.FoundItem.Description,
+                        FoundItemImageUrl = r.FoundItem.ImageUrl,
+                        FoundItemFoundLocation = r.FoundItem.FoundLocation,
+                        FoundItemFoundTime = r.FoundItem.FoundTime,
+                        FoundItemStatus = r.FoundItem.Status,
+                        FoundItemStorageLocation = r.FoundItem.StorageLocation,
+                        CategoryName = r.FoundItem.ItemCategory.Name,
+                        CampusName = r.FoundItem.Campus.Name
+                    })
+                    .OrderByDescending(r => r.ReturnedAt ?? r.ClaimCreatedAt);
+
+                // Get total count
+                var total = await receiptsQuery.CountAsync();
+
+                // Apply pagination
+                var pagedData = await receiptsQuery
+                    .Skip((page - 1) * limit)
+                    .Take(limit)
                     .ToListAsync();
 
-                // Pagination
-                var total = receipts.Count;
-                var skip = (page - 1) * limit;
-                var pagedReceipts = receipts.Skip(skip).Take(limit).ToList();
+                var receipts = pagedData;
 
-                var transactions = pagedReceipts.Select(r => new
+                var transactions = receipts.Select(r => new
                 {
                     transactionId = r.Id.ToString(),
                     claimId = r.ClaimId,
                     foundItemId = r.FoundItemId,
                     returnedDate = r.ReturnedAt,
-                    campus = r.FoundItem.Campus?.Name ?? "",
+                    campus = r.CampusName ?? "",
                     status = r.ReturnedAt != null ? "completed" : "pending",
                     verificationMethod = (string?)null, // Có thể thêm sau nếu cần
                     photo = (string?)null, // Có thể thêm sau nếu cần
                     items = new object[] { }, // Có thể thêm sau nếu cần
                     foundItem = new
                     {
-                        _id = r.FoundItem.Id,
-                        itemName = r.FoundItem.Description ?? r.FoundItem.ItemCategory?.Name ?? "Vật dụng",
-                        category = r.FoundItem.ItemCategory?.Name ?? "",
-                        images = !string.IsNullOrEmpty(r.FoundItem.ImageUrl) 
-                            ? new[] { r.FoundItem.ImageUrl } 
+                        _id = r.FoundItemId,
+                        itemName = r.FoundItemDescription ?? r.CategoryName ?? "Vật dụng",
+                        category = r.CategoryName ?? "",
+                        images = !string.IsNullOrEmpty(r.FoundItemImageUrl) 
+                            ? new[] { r.FoundItemImageUrl } 
                             : new string[] { },
                         condition = (string?)null, // Có thể thêm vào database sau nếu cần
                         color = (string?)null, // Có thể thêm vào database sau nếu cần
-                        description = r.FoundItem.Description,
-                        foundLocation = r.FoundItem.FoundLocation,
-                        foundTime = r.FoundItem.FoundTime,
-                        status = r.FoundItem.Status,
-                        storageLocation = r.FoundItem.StorageLocation
+                        description = r.FoundItemDescription,
+                        foundLocation = r.FoundItemFoundLocation,
+                        foundTime = r.FoundItemFoundTime,
+                        status = r.FoundItemStatus,
+                        storageLocation = r.FoundItemStorageLocation
                     },
-                    staffName = r.Staff.FullName,
+                    staffName = r.StaffName ?? "",
                     confirmedFullName = r.ConfirmedFullName,
                     documentNumber = r.DocumentNumber,
                     phoneNumber = r.PhoneNumber,
-                    createdAt = r.Claim.CreatedAt
+                    createdAt = r.ClaimCreatedAt
                 }).ToList();
 
                 return Ok(new

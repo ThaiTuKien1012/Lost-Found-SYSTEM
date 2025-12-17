@@ -11,16 +11,19 @@ const MatchingPage = () => {
     return <Navigate to="/login" replace />;
   }
 
+  // Normalize role to lowercase for comparison
+  const userRole = user.role?.toLowerCase();
+
   // Route based on role
-  if (user.role === 'student') {
+  if (userRole === 'student') {
     return <StudentMatchingView />;
   }
 
-  if (user.role === 'staff') {
+  if (userRole === 'staff') {
     return <Navigate to="/matching/management" replace />;
   }
 
-  if (user.role === 'security') {
+  if (userRole === 'security') {
     return <Navigate to="/security/ready-to-return" replace />;
   }
 
