@@ -360,10 +360,10 @@ const MatchingManagementPage = () => {
               padding: '12px 24px',
               border: 'none',
               background: 'transparent',
-              borderBottom: activeTab === 'create' ? '3px solid #2180A0' : '3px solid transparent',
+              borderBottom: activeTab === 'create' ? '3px solid #555555' : '3px solid transparent',
               cursor: 'pointer',
               fontWeight: activeTab === 'create' ? '600' : '400',
-              color: activeTab === 'create' ? '#2180A0' : '#666'
+              color: activeTab === 'create' ? '#555555' : '#666666'
             }}
           >
             Tạo Match
@@ -375,10 +375,10 @@ const MatchingManagementPage = () => {
               padding: '12px 24px',
               border: 'none',
               background: 'transparent',
-              borderBottom: activeTab === 'pending' ? '3px solid #2180A0' : '3px solid transparent',
+              borderBottom: activeTab === 'pending' ? '3px solid #555555' : '3px solid transparent',
               cursor: 'pointer',
               fontWeight: activeTab === 'pending' ? '600' : '400',
-              color: activeTab === 'pending' ? '#2180A0' : '#666'
+              color: activeTab === 'pending' ? '#555555' : '#666666'
             }}
           >
             Đang Chờ ({stats.pending})
@@ -390,10 +390,10 @@ const MatchingManagementPage = () => {
               padding: '12px 24px',
               border: 'none',
               background: 'transparent',
-              borderBottom: activeTab === 'confirmed' ? '3px solid #2180A0' : '3px solid transparent',
+              borderBottom: activeTab === 'confirmed' ? '3px solid #555555' : '3px solid transparent',
               cursor: 'pointer',
               fontWeight: activeTab === 'confirmed' ? '600' : '400',
-              color: activeTab === 'confirmed' ? '#2180A0' : '#666'
+              color: activeTab === 'confirmed' ? '#555555' : '#666666'
             }}
           >
             Đã Xác Nhận ({stats.confirmed})

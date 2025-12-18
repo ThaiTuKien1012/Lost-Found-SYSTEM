@@ -2,9 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useFetch } from '../../hooks/useFetch';
 import { useNotification } from '../../hooks/useNotification';
-import { gsap } from 'gsap';
 import userService from '../../api/userService';
-import AnimatedBackground from '../../components/common/AnimatedBackground';
 import { FiUser, FiMail, FiShield, FiMapPin, FiEdit, FiSave, FiX, FiLock, FiPhone } from 'react-icons/fi';
 
 const ProfilePage = () => {
@@ -18,12 +16,6 @@ const ProfilePage = () => {
     newPassword: '',
     confirmPassword: ''
   });
-
-  const pageRef = useRef(null);
-  const titleRef = useRef(null);
-  const cardRef = useRef(null);
-  const infoItemsRef = useRef([]);
-  const editFormRef = useRef(null);
 
   // Fetch profile từ API
   const { data, loading, error, refetch } = useFetch(
@@ -43,40 +35,6 @@ const ProfilePage = () => {
       });
     }
   }, [isEditing, profile]);
-
-  // GSAP animations
-  useEffect(() => {
-    if (profile && !loading) {
-      const tl = gsap.timeline();
-      
-      tl.fromTo(titleRef.current,
-        { opacity: 0, y: -30, scale: 0.9 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'back.out(1.7)' }
-      )
-      .fromTo(cardRef.current,
-        { opacity: 0, y: 50, rotationX: -15 },
-        { opacity: 1, y: 0, rotationX: 0, duration: 0.6, ease: 'power3.out' },
-        '-=0.3'
-      );
-      
-      if (!isEditing && infoItemsRef.current.length > 0) {
-        gsap.fromTo(infoItemsRef.current,
-          { opacity: 0, x: -30 },
-          { opacity: 1, x: 0, duration: 0.4, stagger: 0.1, ease: 'power2.out' },
-          '-=0.4'
-        );
-      }
-    }
-  }, [profile, loading, isEditing]);
-
-  useEffect(() => {
-    if (isEditing && editFormRef.current) {
-      gsap.fromTo(editFormRef.current,
-        { opacity: 0, scale: 0.95 },
-        { opacity: 1, scale: 1, duration: 0.3, ease: 'power2.out' }
-      );
-    }
-  }, [isEditing]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -185,11 +143,28 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="profile-page-enhanced">
-        <AnimatedBackground intensity={0.1} />
-        <div className="loading-enhanced">
-          <div className="spinner"></div>
-          <p>Đang tải...</p>
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: '"Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif',
+        }}
+      >
+        <div style={{ textAlign: 'center' }}>
+          <div
+            style={{
+              width: '40px',
+              height: '40px',
+              border: '3px solid #E0E0E0',
+              borderTopColor: '#333333',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+              margin: '0 auto 16px',
+            }}
+          />
+          <p style={{ color: '#666666', fontSize: '14px' }}>Đang tải...</p>
         </div>
       </div>
     );
@@ -197,160 +172,519 @@ const ProfilePage = () => {
 
   if (error) {
     return (
-      <div className="profile-page-enhanced">
-        <AnimatedBackground intensity={0.1} />
-        <div className="error-enhanced">
-          <p>{error}</p>
-        </div>
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: '"Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif',
+        }}
+      >
+        <p style={{ color: '#FF0000', fontSize: '14px' }}>{error}</p>
       </div>
     );
   }
 
   return (
-    <div ref={pageRef} className="profile-page-enhanced">
-      <AnimatedBackground intensity={0.1} />
-      
-      <div className="page-header-enhanced">
-        <div className="title-wrapper">
-          <FiUser className="title-icon" />
-          <h1 ref={titleRef} className="page-title">Hồ Sơ Cá Nhân</h1>
+    <div
+      style={{
+        minHeight: '100vh',
+        padding: '40px',
+        background: '#F5F5F5',
+        fontFamily: '"Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif',
+      }}
+    >
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Page Header */}
+        <div style={{ marginBottom: '40px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+            <FiUser size={24} color="#333333" />
+            <h1
+              style={{
+                fontSize: '28px',
+                fontWeight: 700,
+                color: '#333333',
+                letterSpacing: '-0.02em',
+                margin: 0,
+              }}
+            >
+              Hồ Sơ Cá Nhân
+            </h1>
+          </div>
         </div>
-      </div>
 
-      {profile && (
-        <div ref={cardRef} className="profile-card-enhanced">
-          <div className="profile-avatar-section">
-            <div className="avatar-wrapper">
-              <div className="avatar-circle">
+        {profile && (
+          <div
+            style={{
+              background: '#FFFFFF',
+              borderRadius: '16px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+              padding: '40px',
+            }}
+          >
+            {/* Avatar Section */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                marginBottom: '40px',
+              }}
+            >
+              <div
+                style={{
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '50%',
+                  background: '#333333',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#FFFFFF',
+                  fontSize: '36px',
+                  fontWeight: 600,
+                  marginBottom: '24px',
+                }}
+              >
                 {(profile.firstName?.[0] || '').toUpperCase()}
                 {(profile.lastName?.[0] || '').toUpperCase()}
               </div>
-            </div>
-            <div className="profile-actions">
-              <button 
-                onClick={() => setIsEditing(!isEditing)}
-                className="btn-edit-profile"
-              >
-                <FiEdit />
-                {isEditing ? 'Hủy' : 'Chỉnh sửa'}
-              </button>
-              <button 
-                onClick={() => setShowPasswordModal(true)}
-                className="btn-change-password"
-              >
-                <FiLock />
-                Đổi mật khẩu
-              </button>
-            </div>
-          </div>
 
-          {!isEditing ? (
-            <div className="profile-info-section">
-              {profileInfo.map((info, index) => {
-                const Icon = info.icon;
-                return (
-                  <div
-                    key={info.label}
-                    ref={el => {
-                      if (el) infoItemsRef.current[index] = el;
-                    }}
-                    className="info-item-enhanced"
-                  >
-                    <div className="info-icon-wrapper">
-                      <Icon className="info-icon" />
-                    </div>
-                    <div className="info-content">
-                      <span className="info-label">{info.label}</span>
-                      <span className="info-value">{info.value}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div ref={editFormRef} className="profile-edit-section">
-              <div className="edit-form">
-                <div className="form-group">
-                  <label>Họ</label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName || ''}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    placeholder="Nhập họ"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Tên</label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName || ''}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    placeholder="Nhập tên"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    value={profile.email || ''}
-                    disabled
-                    className="form-input disabled"
-                    placeholder="Email không thể thay đổi"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Số điện thoại</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone || ''}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    placeholder="Nhập số điện thoại"
-                  />
-                </div>
-                <div className="form-actions">
-                  <button
-                    onClick={handleUpdateProfile}
-                    className="btn-save"
-                  >
-                    <FiSave />
-                    Lưu thay đổi
-                  </button>
-                  <button
-                    onClick={() => setIsEditing(false)}
-                    className="btn-cancel"
-                  >
-                    <FiX />
-                    Hủy
-                  </button>
-                </div>
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  onClick={() => setIsEditing(!isEditing)}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    border: '1px solid #E0E0E0',
+                    background: isEditing ? '#333333' : '#FFFFFF',
+                    color: isEditing ? '#FFFFFF' : '#333333',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isEditing) {
+                      e.target.style.background = '#F5F5F5';
+                      e.target.style.borderColor = '#D1D5DB';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isEditing) {
+                      e.target.style.background = '#FFFFFF';
+                      e.target.style.borderColor = '#E0E0E0';
+                    }
+                  }}
+                >
+                  <FiEdit size={16} />
+                  {isEditing ? 'Hủy' : 'Chỉnh sửa'}
+                </button>
+                <button
+                  onClick={() => setShowPasswordModal(true)}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    border: '1px solid #E0E0E0',
+                    background: '#FFFFFF',
+                    color: '#333333',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = '#F5F5F5';
+                    e.target.style.borderColor = '#D1D5DB';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = '#FFFFFF';
+                    e.target.style.borderColor = '#E0E0E0';
+                  }}
+                >
+                  <FiLock size={16} />
+                  Đổi mật khẩu
+                </button>
               </div>
             </div>
-          )}
-        </div>
-      )}
+
+            {/* Profile Info Section */}
+            {!isEditing ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {profileInfo.map((info) => {
+                  const Icon = info.icon;
+                  return (
+                    <div
+                      key={info.label}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        padding: '16px',
+                        borderRadius: '8px',
+                        border: '1px solid #E0E0E0',
+                        background: '#FFFFFF',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '8px',
+                          background: '#F5F5F5',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#666666',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Icon size={20} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div
+                          style={{
+                            fontSize: '12px',
+                            fontWeight: 500,
+                            color: '#999999',
+                            marginBottom: '4px',
+                          }}
+                        >
+                          {info.label}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: '14px',
+                            fontWeight: 500,
+                            color: '#333333',
+                          }}
+                        >
+                          {info.value}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div>
+                    <label
+                      style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        color: '#333333',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      Họ
+                    </label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={formData.firstName || ''}
+                      onChange={handleInputChange}
+                      style={{
+                        width: '100%',
+                        height: '48px',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        border: '1px solid #E0E0E0',
+                        background: '#FFFFFF',
+                        fontSize: '14px',
+                        fontWeight: 400,
+                        color: '#333333',
+                        outline: 'none',
+                        transition: 'all 0.2s',
+                        boxSizing: 'border-box',
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#4285F4';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(66, 133, 244, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#E0E0E0';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                      placeholder="Nhập họ"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        color: '#333333',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      Tên
+                    </label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName || ''}
+                      onChange={handleInputChange}
+                      style={{
+                        width: '100%',
+                        height: '48px',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        border: '1px solid #E0E0E0',
+                        background: '#FFFFFF',
+                        fontSize: '14px',
+                        fontWeight: 400,
+                        color: '#333333',
+                        outline: 'none',
+                        transition: 'all 0.2s',
+                        boxSizing: 'border-box',
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#4285F4';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(66, 133, 244, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#E0E0E0';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                      placeholder="Nhập tên"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        color: '#333333',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={profile.email || ''}
+                      disabled
+                      style={{
+                        width: '100%',
+                        height: '48px',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        border: '1px solid #E0E0E0',
+                        background: '#F5F5F5',
+                        fontSize: '14px',
+                        fontWeight: 400,
+                        color: '#999999',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                        cursor: 'not-allowed',
+                      }}
+                      placeholder="Email không thể thay đổi"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        color: '#333333',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      Số điện thoại
+                    </label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone || ''}
+                      onChange={handleInputChange}
+                      style={{
+                        width: '100%',
+                        height: '48px',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        border: '1px solid #E0E0E0',
+                        background: '#FFFFFF',
+                        fontSize: '14px',
+                        fontWeight: 400,
+                        color: '#333333',
+                        outline: 'none',
+                        transition: 'all 0.2s',
+                        boxSizing: 'border-box',
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#4285F4';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(66, 133, 244, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#E0E0E0';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                      placeholder="Nhập số điện thoại"
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                    <button
+                      onClick={handleUpdateProfile}
+                      style={{
+                        flex: 1,
+                        height: '48px',
+                        padding: '12px 20px',
+                        borderRadius: '8px',
+                        background: '#000000',
+                        color: '#FFFFFF',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={(e) => (e.target.style.background = '#333333')}
+                      onMouseLeave={(e) => (e.target.style.background = '#000000')}
+                    >
+                      <FiSave size={16} />
+                      Lưu thay đổi
+                    </button>
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      style={{
+                        flex: 1,
+                        height: '48px',
+                        padding: '12px 20px',
+                        borderRadius: '8px',
+                        border: '1px solid #E0E0E0',
+                        background: '#FFFFFF',
+                        color: '#333333',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.background = '#F5F5F5';
+                        e.target.style.borderColor = '#D1D5DB';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.background = '#FFFFFF';
+                        e.target.style.borderColor = '#E0E0E0';
+                      }}
+                    >
+                      <FiX size={16} />
+                      Hủy
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Password Change Modal */}
       {showPasswordModal && (
-        <div className="modal-overlay" onClick={() => setShowPasswordModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Đổi Mật Khẩu</h2>
-              <button 
-                className="modal-close"
-                onClick={() => setShowPasswordModal(false)}
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px',
+          }}
+          onClick={() => setShowPasswordModal(false)}
+        >
+          <div
+            style={{
+              background: '#FFFFFF',
+              borderRadius: '16px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+              width: '100%',
+              maxWidth: '480px',
+              padding: '32px',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '24px',
+              }}
+            >
+              <h2
+                style={{
+                  fontSize: '24px',
+                  fontWeight: 700,
+                  color: '#333333',
+                  margin: 0,
+                }}
               >
-                <FiX />
+                Đổi Mật Khẩu
+              </h2>
+              <button
+                onClick={() => setShowPasswordModal(false)}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  border: '1px solid #E0E0E0',
+                  background: '#FFFFFF',
+                  color: '#333333',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#F5F5F5';
+                  e.target.style.borderColor = '#D1D5DB';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = '#FFFFFF';
+                  e.target.style.borderColor = '#E0E0E0';
+                }}
+              >
+                <FiX size={18} />
               </button>
             </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Mật khẩu hiện tại</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px' }}>
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: '#333333',
+                    marginBottom: '8px',
+                  }}
+                >
+                  Mật khẩu hiện tại
+                </label>
                 <input
                   type="password"
                   value={passwordData.currentPassword}
@@ -358,12 +692,43 @@ const ProfilePage = () => {
                     ...prev,
                     currentPassword: e.target.value
                   }))}
-                  className="form-input"
+                  style={{
+                    width: '100%',
+                    height: '48px',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid #E0E0E0',
+                    background: '#FFFFFF',
+                    fontSize: '14px',
+                    fontWeight: 400,
+                    color: '#333333',
+                    outline: 'none',
+                    transition: 'all 0.2s',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#4285F4';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(66, 133, 244, 0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#E0E0E0';
+                    e.target.style.boxShadow = 'none';
+                  }}
                   placeholder="Nhập mật khẩu hiện tại"
                 />
               </div>
-              <div className="form-group">
-                <label>Mật khẩu mới</label>
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: '#333333',
+                    marginBottom: '8px',
+                  }}
+                >
+                  Mật khẩu mới
+                </label>
                 <input
                   type="password"
                   value={passwordData.newPassword}
@@ -371,12 +736,43 @@ const ProfilePage = () => {
                     ...prev,
                     newPassword: e.target.value
                   }))}
-                  className="form-input"
+                  style={{
+                    width: '100%',
+                    height: '48px',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid #E0E0E0',
+                    background: '#FFFFFF',
+                    fontSize: '14px',
+                    fontWeight: 400,
+                    color: '#333333',
+                    outline: 'none',
+                    transition: 'all 0.2s',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#4285F4';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(66, 133, 244, 0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#E0E0E0';
+                    e.target.style.boxShadow = 'none';
+                  }}
                   placeholder="Nhập mật khẩu mới"
                 />
               </div>
-              <div className="form-group">
-                <label>Xác nhận mật khẩu mới</label>
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: '#333333',
+                    marginBottom: '8px',
+                  }}
+                >
+                  Xác nhận mật khẩu mới
+                </label>
                 <input
                   type="password"
                   value={passwordData.confirmPassword}
@@ -384,21 +780,76 @@ const ProfilePage = () => {
                     ...prev,
                     confirmPassword: e.target.value
                   }))}
-                  className="form-input"
+                  style={{
+                    width: '100%',
+                    height: '48px',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid #E0E0E0',
+                    background: '#FFFFFF',
+                    fontSize: '14px',
+                    fontWeight: 400,
+                    color: '#333333',
+                    outline: 'none',
+                    transition: 'all 0.2s',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#4285F4';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(66, 133, 244, 0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#E0E0E0';
+                    e.target.style.boxShadow = 'none';
+                  }}
                   placeholder="Nhập lại mật khẩu mới"
                 />
               </div>
             </div>
-            <div className="modal-footer">
+            <div style={{ display: 'flex', gap: '12px' }}>
               <button
                 onClick={handleChangePassword}
-                className="btn-primary"
+                style={{
+                  flex: 1,
+                  height: '48px',
+                  padding: '12px 20px',
+                  borderRadius: '8px',
+                  background: '#000000',
+                  color: '#FFFFFF',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => (e.target.style.background = '#333333')}
+                onMouseLeave={(e) => (e.target.style.background = '#000000')}
               >
                 Đổi mật khẩu
               </button>
               <button
                 onClick={() => setShowPasswordModal(false)}
-                className="btn-secondary"
+                style={{
+                  flex: 1,
+                  height: '48px',
+                  padding: '12px 20px',
+                  borderRadius: '8px',
+                  border: '1px solid #E0E0E0',
+                  background: '#FFFFFF',
+                  color: '#333333',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#F5F5F5';
+                  e.target.style.borderColor = '#D1D5DB';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = '#FFFFFF';
+                  e.target.style.borderColor = '#E0E0E0';
+                }}
               >
                 Hủy
               </button>
@@ -406,9 +857,14 @@ const ProfilePage = () => {
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };
 
 export default ProfilePage;
-

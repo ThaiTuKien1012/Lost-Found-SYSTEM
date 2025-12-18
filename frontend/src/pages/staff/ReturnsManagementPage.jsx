@@ -1,54 +1,37 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useFetch } from '../../hooks/useFetch';
-import { useNotification } from '../../hooks/useNotification';
-import { gsap } from 'gsap';
 import { Link } from 'react-router-dom';
 import returnService from '../../api/returnService';
-import AnimatedBackground from '../../components/common/AnimatedBackground';
+import SearchBar from '../../components/common/SearchBar';
 import { 
   FiClock, 
   FiCalendar, 
   FiMapPin, 
-  FiFilter, 
   FiUser, 
   FiPackage, 
   FiEye,
   FiCheckCircle,
   FiXCircle,
-  FiSearch,
-  FiGrid,
-  FiList,
-  FiTag,
   FiImage
 } from 'react-icons/fi';
 import { formatDate, getStatusLabel, getStatusColor, getImageUrl } from '../../utils/helpers';
 import { CAMPUSES } from '../../utils/constants';
 
 const ReturnsManagementPage = () => {
-  const { showSuccess, showError } = useNotification();
   const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [campusFilter, setCampusFilter] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'table'
-
-  const pageRef = useRef(null);
-  const titleRef = useRef(null);
-  const statsRef = useRef([]);
-  const itemsRef = useRef([]);
-  const searchRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('returnedDate');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [searchFilters, setSearchFilters] = useState({});
 
   const filters = {
-    ...(statusFilter && { status: statusFilter }),
-    ...(campusFilter && { campus: campusFilter }),
-    ...(dateFilter && { date: dateFilter })
+    ...(searchFilters.status && { status: searchFilters.status }),
+    ...(searchFilters.campus && { campus: searchFilters.campus })
   };
 
-  const { data, loading, error, refetch } = useFetch(
+  const { data, loading, error } = useFetch(
     () => returnService.getReturns(page, 20, filters),
-    [page, statusFilter, campusFilter, dateFilter]
+    [page, searchFilters]
   );
 
   // Fetch all returns for statistics
@@ -56,54 +39,6 @@ const ReturnsManagementPage = () => {
     () => returnService.getReturns(1, 1000, {}),
     []
   );
-
-  useEffect(() => {
-    if (!titleRef.current) return;
-    
-    const tl = gsap.timeline();
-    
-    tl.fromTo(titleRef.current,
-      { opacity: 0, y: -30, scale: 0.9 },
-      { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'back.out(1.7)' }
-    );
-  }, []);
-
-  useEffect(() => {
-    if (!statsData?.data || statsRef.current.length === 0) return;
-
-    const timer = setTimeout(() => {
-      const validRefs = statsRef.current.filter(ref => ref !== null && ref !== undefined);
-      if (validRefs.length > 0) {
-        gsap.fromTo(validRefs,
-          { opacity: 0, y: 20, scale: 0.9 },
-          { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.1, ease: 'power2.out' }
-        );
-      }
-    }, 200);
-
-    return () => clearTimeout(timer);
-  }, [statsData]);
-
-  useEffect(() => {
-    if (!data?.data || data.data.length === 0) {
-      itemsRef.current = [];
-      return;
-    }
-
-    itemsRef.current = new Array(data.data.length).fill(null);
-
-    const timer = setTimeout(() => {
-      const validRefs = itemsRef.current.filter(ref => ref !== null && ref !== undefined);
-      if (validRefs.length > 0) {
-        gsap.fromTo(validRefs,
-          { opacity: 0, y: 30, rotationX: -15 },
-          { opacity: 1, y: 0, rotationX: 0, duration: 0.5, stagger: 0.08, ease: 'power3.out' }
-        );
-      }
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [data]);
 
   const calculateStats = () => {
     if (!statsData?.data) return { total: 0, completed: 0, pending: 0, failed: 0 };
@@ -119,457 +54,504 @@ const ReturnsManagementPage = () => {
 
   const stats = calculateStats();
 
-  const handleSearch = async () => {
-    if (!keyword.trim()) {
-      refetch();
-      return;
+  const getFilteredItems = () => {
+    let items = data?.data || [];
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      items = items.filter(item =>
+        item.transactionId?.toLowerCase().includes(query) ||
+        item.foundItem?.itemName?.toLowerCase().includes(query) ||
+        item.student?.firstName?.toLowerCase().includes(query) ||
+        item.student?.lastName?.toLowerCase().includes(query)
+      );
     }
-    
-    // Search functionality can be implemented here
-    refetch();
+
+    if (sortBy) {
+      items.sort((a, b) => {
+        let aVal, bVal;
+        switch (sortBy) {
+          case 'returnedDate':
+            aVal = new Date(a.returnedDate || a.createdAt);
+            bVal = new Date(b.returnedDate || b.createdAt);
+            break;
+          case 'itemName':
+            aVal = a.foundItem?.itemName?.toLowerCase() || '';
+            bVal = b.foundItem?.itemName?.toLowerCase() || '';
+            break;
+          default:
+            return 0;
+        }
+        if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return items;
   };
 
-  const handleCardHover = (index, isHovering) => {
-    const card = itemsRef.current[index];
-    if (!card) return;
-
-    gsap.to(card, {
-      scale: isHovering ? 1.02 : 1,
-      y: isHovering ? -8 : 0,
-      rotationY: isHovering ? 2 : 0,
-      duration: 0.3,
-      ease: 'power2.out'
-    });
-  };
+  const filteredItems = getFilteredItems();
 
   const getCampusLabel = (campus) => {
     const camp = CAMPUSES.find(c => c.value === campus);
     return camp ? camp.label : campus;
   };
 
-  const getCategoryLabel = (category) => {
-    // Simple category label mapping
-    const categoryMap = {
-      'PHONE': 'Điện thoại',
-      'WALLET': 'Ví/Bóp',
-      'BAG': 'Túi xách',
-      'LAPTOP': 'Laptop',
-      'WATCH': 'Đồng hồ',
-      'BOOK': 'Sách',
-      'KEYS': 'Chìa khóa',
-      'OTHER': 'Khác'
-    };
-    return categoryMap[category] || category;
-  };
-
   return (
-    <div ref={pageRef} className="returns-management-page">
-      <AnimatedBackground intensity={0.08} />
-      
-      {/* Header */}
-      <div className="page-header-enhanced">
-        <div className="title-wrapper">
-          <FiClock className="title-icon" />
-          <h1 ref={titleRef} className="page-title">Quản Lý Trả Đồ</h1>
-        </div>
-      </div>
-
-      {/* Statistics Section */}
-      <div className="found-items-stats-section">
-        <div 
-          ref={el => statsRef.current[0] = el}
-          className="stat-card-found"
+    <div
+      style={{
+        minHeight: '100vh',
+        padding: '40px',
+        background: '#F5F5F5',
+        fontFamily: '"Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif',
+      }}
+    >
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {/* Page Header */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '32px',
+            flexWrap: 'wrap',
+            gap: '16px',
+          }}
         >
-          <div className="stat-icon-wrapper" style={{ background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)' }}>
-            <FiCheckCircle />
-          </div>
-          <div className="stat-content">
-            <span className="stat-value">{stats.completed}</span>
-            <span className="stat-label">Đã hoàn thành</span>
-          </div>
-        </div>
-
-        <div 
-          ref={el => statsRef.current[1] = el}
-          className="stat-card-found"
-        >
-          <div className="stat-icon-wrapper" style={{ background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)' }}>
-            <FiClock />
-          </div>
-          <div className="stat-content">
-            <span className="stat-value">{stats.pending}</span>
-            <span className="stat-label">Đang xử lý</span>
-          </div>
-        </div>
-
-        <div 
-          ref={el => statsRef.current[2] = el}
-          className="stat-card-found"
-        >
-          <div className="stat-icon-wrapper" style={{ background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)' }}>
-            <FiXCircle />
-          </div>
-          <div className="stat-content">
-            <span className="stat-value">{stats.failed}</span>
-            <span className="stat-label">Thất bại</span>
-          </div>
-        </div>
-
-        <div 
-          ref={el => statsRef.current[3] = el}
-          className="stat-card-found"
-        >
-          <div className="stat-icon-wrapper" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-            <FiPackage />
-          </div>
-          <div className="stat-content">
-            <span className="stat-value">{stats.total}</span>
-            <span className="stat-label">Tổng giao dịch</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Search and Filter Section */}
-      <div className="found-items-controls">
-        <div className="search-bar-wrapper">
-          <div className="search-input-group">
-            <FiSearch className="search-icon" />
-            <input
-              ref={searchRef}
-              type="text"
-              placeholder="Tìm kiếm theo mã GD, tên sinh viên, đồ vật..."
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="search-input"
-            />
-            <button onClick={handleSearch} className="btn-search">
-              <FiSearch /> Tìm kiếm
-            </button>
-          </div>
-        </div>
-
-        <div className="controls-right">
-          <div className="view-toggle">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-              title="Xem dạng lưới"
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <FiClock size={28} color="#333333" />
+            <h1
+              style={{
+                fontSize: '28px',
+                fontWeight: 700,
+                color: '#333333',
+                letterSpacing: '-0.02em',
+                margin: 0,
+              }}
             >
-              <FiGrid />
-            </button>
-            <button
-              onClick={() => setViewMode('table')}
-              className={`view-btn ${viewMode === 'table' ? 'active' : ''}`}
-              title="Xem dạng bảng"
-            >
-              <FiList />
-            </button>
+              Quản Lý Trả Đồ
+            </h1>
           </div>
-
-          <button 
-            onClick={() => setShowFilters(!showFilters)}
-            className={`btn-filter ${showFilters ? 'active' : ''}`}
-          >
-            <FiFilter /> {showFilters ? 'Ẩn bộ lọc' : 'Bộ lọc'}
-          </button>
         </div>
-      </div>
 
-      {/* Filters */}
-      {showFilters && (
-        <div className="filters-panel">
-          <div className="filter-group">
-            <label>Trạng thái:</label>
-            <select 
-              value={statusFilter} 
-              onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              className="filter-select"
-            >
-              <option value="">Tất cả</option>
-              <option value="completed">Đã hoàn thành</option>
-              <option value="pending">Đang xử lý</option>
-              <option value="failed">Thất bại</option>
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label>Campus:</label>
-            <select 
-              value={campusFilter} 
-              onChange={(e) => { setCampusFilter(e.target.value); setPage(1); }}
-              className="filter-select"
-            >
-              <option value="">Tất cả</option>
-              {CAMPUSES.map(campus => (
-                <option key={campus.value} value={campus.value}>{campus.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label>Ngày:</label>
-            <input
-              type="date"
-              value={dateFilter}
-              onChange={(e) => { setDateFilter(e.target.value); setPage(1); }}
-              className="filter-input"
-            />
-          </div>
-
-          <button 
-            onClick={() => {
-              setStatusFilter('');
-              setCampusFilter('');
-              setDateFilter('');
+        {/* Search Bar */}
+        <div style={{ maxWidth: '1400px', margin: '0 auto 24px auto' }}>
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            onSearch={(query) => {
+              setSearchQuery(query);
               setPage(1);
             }}
-            className="btn-clear-filters"
-          >
-            <FiXCircle /> Xóa bộ lọc
-          </button>
+            onClear={() => {
+              setSearchQuery('');
+              setPage(1);
+            }}
+            placeholder="🔍 Tìm kiếm theo mã GD, tên sinh viên, đồ vật..."
+            showFilter={false}
+            showSort={true}
+            sortOptions={[
+              { value: 'returnedDate', label: 'Ngày trả (Mới nhất)', order: 'desc' },
+              { value: 'returnedDate', label: 'Ngày trả (Cũ nhất)', order: 'asc' },
+              { value: 'itemName', label: 'Tên đồ vật (A-Z)', order: 'asc' },
+              { value: 'itemName', label: 'Tên đồ vật (Z-A)', order: 'desc' },
+            ]}
+            currentSort={sortBy ? { field: sortBy, order: sortOrder } : null}
+            onSortChange={(field, order) => {
+              setSortBy(field);
+              setSortOrder(order);
+              setPage(1);
+            }}
+          />
         </div>
-      )}
 
-      {/* Transactions Content */}
-      <div className="found-items-content">
-        {loading && (
-          <div className="loading-enhanced">
-            <div className="spinner"></div>
-            <p>Đang tải...</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="error-enhanced">
-            <p>{error}</p>
-          </div>
-        )}
-
-        {data && data.data && data.data.length === 0 && (
-          <div className="empty-state">
-            <FiClock className="empty-icon" />
-            <p>Không tìm thấy giao dịch trả đồ nào</p>
-          </div>
-        )}
-
-        {data && data.data && data.data.length > 0 && (
-          <>
-            {viewMode === 'grid' ? (
-              <div className="found-items-grid">
-                {data.data.map((transaction, index) => {
-                  const statusColors = getStatusColor(transaction.status);
-                  return (
+        {/* Main Content */}
+        <div>
+          {/* Statistics Cards */}
+          {!loading && !error && (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '16px',
+                marginBottom: '32px',
+              }}
+            >
+              <div
+                style={{
+                  background: '#FFFFFF',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  border: '1px solid #E0E0E0',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
                     <div
-                      key={transaction._id || transaction.transactionId}
-                      ref={el => itemsRef.current[index] = el}
-                      className="found-item-card"
-                      onMouseEnter={() => handleCardHover(index, true)}
-                      onMouseLeave={() => handleCardHover(index, false)}
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '8px',
+                        background: '#E3F2FD',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#1976D2',
+                      }}
                     >
-                      {/* Image Section */}
-                      <div className="found-item-image-wrapper">
-                        {transaction.foundItem?.images && transaction.foundItem.images.length > 0 ? (
-                          <img 
-                            src={getImageUrl(transaction.foundItem.images[0])} 
-                            alt={transaction.foundItem.itemName || 'Đồ vật'}
-                            className="found-item-image"
-                          />
-                        ) : (
-                          <div className="found-item-image-placeholder">
-                            <FiImage className="placeholder-icon" />
-                          </div>
-                        )}
-                        <div 
-                          className="found-item-status-badge" 
-                          style={{ 
-                            backgroundColor: statusColors.bg,
-                            color: statusColors.color
-                          }}
-                        >
-                          {getStatusLabel(transaction.status)}
-                        </div>
-                      </div>
-
-                      {/* Content Section */}
-                      <div className="found-item-content">
-                        <div className="found-item-header">
-                          <h3 className="found-item-title">
-                            {transaction.foundItem?.itemName || 'Đồ vật không xác định'}
-                          </h3>
-                          <span className="found-item-id">
-                            {transaction.transactionId || `#${transaction._id?.slice(-6)}`}
-                          </span>
-                        </div>
-
-                        <div className="found-item-meta">
-                          <div className="meta-item">
-                            <FiUser className="meta-icon" />
-                            <span>
-                              {transaction.student 
-                                ? `${transaction.student.firstName} ${transaction.student.lastName}`
-                                : 'N/A'}
-                            </span>
-                          </div>
-                          <div className="meta-item">
-                            <FiMapPin className="meta-icon" />
-                            <span>{getCampusLabel(transaction.campus)}</span>
-                          </div>
-                          <div className="meta-item">
-                            <FiCalendar className="meta-icon" />
-                            <span>
-                              {transaction.returnedDate 
-                                ? formatDate(transaction.returnedDate)
-                                : 'N/A'}
-                            </span>
-                          </div>
-                          {transaction.foundItem?.category && (
-                            <div className="meta-item">
-                              <FiTag className="meta-icon" />
-                              <span>{getCategoryLabel(transaction.foundItem.category)}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="found-item-actions">
-                        <Link 
-                          to={`/returns/${transaction.transactionId || transaction._id}`}
-                          className="btn-action btn-view"
-                        >
-                          <FiEye /> Chi tiết
-                        </Link>
-                      </div>
+                      <FiPackage size={20} />
                     </div>
-                  );
-                })}
+                    <div style={{ fontSize: '12px', fontWeight: 500, color: '#999999' }}>Tổng GD</div>
+                  </div>
+                  <div style={{ fontSize: '32px', fontWeight: 700, color: '#000000', lineHeight: 1 }}>{stats.total}</div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: '#FFFFFF',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  border: '1px solid #E0E0E0',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                    <div
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '8px',
+                        background: '#E8F5E9',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#388E3C',
+                      }}
+                    >
+                      <FiCheckCircle size={20} />
+                    </div>
+                    <div style={{ fontSize: '12px', fontWeight: 500, color: '#999999' }}>Hoàn Thành</div>
+                  </div>
+                  <div style={{ fontSize: '32px', fontWeight: 700, color: '#000000', lineHeight: 1 }}>{stats.completed}</div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: '#FFFFFF',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  border: '1px solid #E0E0E0',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                    <div
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '8px',
+                        background: '#FFF3E0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#F57C00',
+                      }}
+                    >
+                      <FiClock size={20} />
+                    </div>
+                    <div style={{ fontSize: '12px', fontWeight: 500, color: '#999999' }}>Đang Xử Lý</div>
+                  </div>
+                  <div style={{ fontSize: '32px', fontWeight: 700, color: '#000000', lineHeight: 1 }}>{stats.pending}</div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: '#FFFFFF',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  border: '1px solid #E0E0E0',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                    <div
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '8px',
+                        background: '#FFEBEE',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#D32F2F',
+                      }}
+                    >
+                      <FiXCircle size={20} />
+                    </div>
+                    <div style={{ fontSize: '12px', fontWeight: 500, color: '#999999' }}>Thất Bại</div>
+                  </div>
+                  <div style={{ fontSize: '32px', fontWeight: 700, color: '#000000', lineHeight: 1 }}>{stats.failed}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Items Grid */}
+          <div>
+            {loading ? (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '60px 20px',
+                  background: '#FFFFFF',
+                  borderRadius: '16px',
+                }}
+              >
+                <div
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    border: '3px solid #E0E0E0',
+                    borderTopColor: '#333333',
+                    borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite',
+                    marginBottom: '16px',
+                  }}
+                />
+                <p style={{ color: '#666666', fontSize: '14px' }}>Đang tải...</p>
+              </div>
+            ) : error ? (
+              <div
+                style={{
+                  padding: '40px',
+                  background: '#FFFFFF',
+                  borderRadius: '16px',
+                  textAlign: 'center',
+                }}
+              >
+                <p style={{ color: '#FF0000', fontSize: '14px' }}>{error}</p>
+              </div>
+            ) : filteredItems.length === 0 ? (
+              <div
+                style={{
+                  padding: '60px 20px',
+                  background: '#FFFFFF',
+                  borderRadius: '16px',
+                  textAlign: 'center',
+                }}
+              >
+                <FiClock size={48} style={{ color: '#999999', marginBottom: '16px' }} />
+                <h3 style={{ color: '#333333', marginBottom: '8px' }}>Không tìm thấy giao dịch trả đồ nào</h3>
+                <p style={{ color: '#666666' }}>Danh sách trống hoặc không tìm thấy kết quả phù hợp</p>
               </div>
             ) : (
-              <div className="found-items-table-wrapper">
-                <table className="found-items-table">
-                  <thead>
-                    <tr>
-                      <th>Hình ảnh</th>
-                      <th>Mã GD</th>
-                      <th>Đồ vật</th>
-                      <th>Sinh viên</th>
-                      <th>Campus</th>
-                      <th>Ngày trả</th>
-                      <th>Trạng thái</th>
-                      <th>Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.data.map((transaction, index) => {
-                      const statusColors = getStatusColor(transaction.status);
-                      return (
-                        <tr
-                          key={transaction._id || transaction.transactionId}
-                          ref={el => itemsRef.current[index] = el}
-                        >
-                          <td>
-                            <div className="table-image-cell">
-                              {transaction.foundItem?.images && transaction.foundItem.images.length > 0 ? (
-                                <img 
-                                  src={getImageUrl(transaction.foundItem.images[0])} 
-                                  alt={transaction.foundItem.itemName || 'Đồ vật'}
-                                  className="table-image"
-                                />
-                              ) : (
-                                <div className="table-image-placeholder">
-                                  <FiImage />
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td>
-                            <span className="table-id">
-                              {transaction.transactionId || `#${transaction._id?.slice(-6)}`}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="table-item-name">
-                              <strong>{transaction.foundItem?.itemName || 'N/A'}</strong>
-                              {transaction.foundItem?.category && (
-                                <span className="table-description">
-                                  {getCategoryLabel(transaction.foundItem.category)}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td>
-                            <span className="table-campus">
-                              {transaction.student 
-                                ? `${transaction.student.firstName} ${transaction.student.lastName}`
-                                : 'N/A'}
-                            </span>
-                          </td>
-                          <td>
-                            <span className="table-campus">{getCampusLabel(transaction.campus)}</span>
-                          </td>
-                          <td>
-                            <span className="table-date">
-                              {transaction.returnedDate 
-                                ? formatDate(transaction.returnedDate)
-                                : 'N/A'}
-                            </span>
-                          </td>
-                          <td>
-                            <span 
-                              className="table-status-badge"
-                              style={{ 
-                                backgroundColor: statusColors.bg,
-                                color: statusColors.color
+              <>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                    gap: '20px',
+                    marginBottom: '24px',
+                  }}
+                >
+                  {filteredItems.map((transaction) => {
+                    const statusColors = getStatusColor(transaction.status);
+                    return (
+                      <div
+                        key={transaction._id || transaction.transactionId}
+                        style={{
+                          background: '#FFFFFF',
+                          borderRadius: '12px',
+                          border: '1px solid #E0E0E0',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                          overflow: 'hidden',
+                          transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.05)';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                        }}
+                      >
+                        {/* Image Section */}
+                        <div style={{ position: 'relative', width: '100%', height: '180px', background: '#F5F5F5' }}>
+                          {transaction.foundItem?.images && transaction.foundItem.images.length > 0 ? (
+                            <img
+                              src={getImageUrl(transaction.foundItem.images[0])}
+                              alt={transaction.foundItem.itemName || 'Đồ vật'}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#999999',
                               }}
                             >
-                              {getStatusLabel(transaction.status)}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="table-actions">
-                              <Link 
-                                to={`/returns/${transaction.transactionId || transaction._id}`}
-                                className="btn-action-table btn-view-table"
-                                title="Xem chi tiết"
-                              >
-                                <FiEye />
-                              </Link>
+                              <FiImage size={48} />
                             </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </>
-        )}
+                          )}
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: '12px',
+                              left: '12px',
+                              padding: '6px 12px',
+                              borderRadius: '20px',
+                              background: statusColors.bg,
+                              color: statusColors.color,
+                              fontSize: '12px',
+                              fontWeight: 600,
+                            }}
+                          >
+                            {getStatusLabel(transaction.status)}
+                          </div>
+                        </div>
 
-        {/* Pagination */}
-        {data && data.pagination && data.pagination.pages > 1 && (
-          <div className="pagination-wrapper">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="pagination-btn"
-            >
-              Trước
-            </button>
-            <span className="pagination-info">
-              Trang {data.pagination.page} / {data.pagination.pages}
-            </span>
-            <button
-              onClick={() => setPage(p => Math.min(data.pagination.pages, p + 1))}
-              disabled={page === data.pagination.pages}
-              className="pagination-btn"
-            >
-              Sau
-            </button>
+                        {/* Content Section */}
+                        <div style={{ padding: '16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#333333', margin: 0, flex: 1 }}>
+                              {transaction.foundItem?.itemName || 'Đồ vật không xác định'}
+                            </h3>
+                            <span style={{ fontSize: '12px', color: '#999999', marginLeft: '8px' }}>
+                              {transaction.transactionId || `#${transaction._id?.slice(-6)}`}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#666666' }}>
+                              <FiUser size={14} />
+                              <span>
+                                {transaction.student
+                                  ? `${transaction.student.firstName} ${transaction.student.lastName}`
+                                  : 'N/A'}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#666666' }}>
+                              <FiMapPin size={14} />
+                              <span>{getCampusLabel(transaction.campus)}</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#666666' }}>
+                              <FiCalendar size={14} />
+                              <span>
+                                {transaction.returnedDate
+                                  ? formatDate(transaction.returnedDate)
+                                  : 'N/A'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <Link
+                            to={`/returns/${transaction.transactionId || transaction._id}`}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px',
+                              width: '100%',
+                              padding: '10px 12px',
+                              borderRadius: '6px',
+                              background: '#000000',
+                              color: '#FFFFFF',
+                              fontSize: '14px',
+                              fontWeight: 500,
+                              border: 'none',
+                              textDecoration: 'none',
+                              transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={(e) => (e.target.style.background = '#333333')}
+                            onMouseLeave={(e) => (e.target.style.background = '#000000')}
+                          >
+                            <FiEye size={16} />
+                            Chi tiết
+                          </Link>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Pagination */}
+                {data?.pagination && data.pagination.pages > 1 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '16px',
+                      marginTop: '32px',
+                    }}
+                  >
+                    <button
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        background: page === 1 ? '#F5F5F5' : '#FFFFFF',
+                        color: page === 1 ? '#999999' : '#333333',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        border: '1px solid #E0E0E0',
+                        cursor: page === 1 ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      Trước
+                    </button>
+                    <span style={{ fontSize: '14px', color: '#666666' }}>
+                      Trang {data.pagination.page} / {data.pagination.pages}
+                    </span>
+                    <button
+                      onClick={() => setPage(p => Math.min(data.pagination.pages, p + 1))}
+                      disabled={page === data.pagination.pages}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        background: page === data.pagination.pages ? '#F5F5F5' : '#FFFFFF',
+                        color: page === data.pagination.pages ? '#999999' : '#333333',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        border: '1px solid #E0E0E0',
+                        cursor: page === data.pagination.pages ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      Sau
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
-        )}
+        </div>
       </div>
+
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };

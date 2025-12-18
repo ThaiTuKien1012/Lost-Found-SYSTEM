@@ -56,13 +56,13 @@ const MyTransactionsPage = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'completed':
-        return '#22C55E';
+        return '#555555';
       case 'pending':
-        return '#F97316';
+        return '#888888';
       case 'failed':
-        return '#EF4444';
+        return '#666666';
       default:
-        return '#06B6D4';
+        return '#555555';
     }
   };
 

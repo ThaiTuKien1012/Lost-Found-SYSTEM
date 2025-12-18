@@ -307,13 +307,13 @@ const LostItemDetailPage = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending':
-        return { bg: '#FEF3C7', color: '#92400E', border: '#FCD34D' };
+        return { bg: '#F5F5F5', color: '#444444', border: '#D0D0D0' };
       case 'verified':
-        return { bg: '#DBEAFE', color: '#1E40AF', border: '#60A5FA' };
+        return { bg: '#EEEEEE', color: '#444444', border: '#CCCCCC' };
       case 'returned':
-        return { bg: '#E0E7FF', color: '#3730A3', border: '#818CF8' };
+        return { bg: '#E0E0E0', color: '#444444', border: '#BBBBBB' };
       default:
-        return { bg: '#F3F4F6', color: '#374151', border: '#9CA3AF' };
+        return { bg: '#FAFAFA', color: '#444444', border: '#E0E0E0' };
     }
   };
 

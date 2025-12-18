@@ -8,23 +8,23 @@ export { formatDate, formatDateTime, formatRelativeTime, formatFileSize, formatP
 export const getStatusColor = (status) => {
   switch (status) {
     case 'pending':
-      return { bg: '#FEF3C7', color: '#92400E', border: '#FCD34D' };
+      return { bg: '#F5F5F5', color: '#444444', border: '#D0D0D0' };
     case 'verified':
-      return { bg: '#DBEAFE', color: '#1E40AF', border: '#60A5FA' };
+      return { bg: '#EEEEEE', color: '#444444', border: '#CCCCCC' };
     case 'rejected':
-      return { bg: '#FEE2E2', color: '#991B1B', border: '#F87171' };
+      return { bg: '#666666', color: '#FFFFFF', border: '#555555' };
     case 'returned':
-      return { bg: '#E0E7FF', color: '#3730A3', border: '#818CF8' };
+      return { bg: '#E0E0E0', color: '#444444', border: '#BBBBBB' };
     case 'unclaimed':
-      return { bg: '#FEF3C7', color: '#92400E', border: '#FCD34D' };
+      return { bg: '#F5F5F5', color: '#444444', border: '#D0D0D0' };
     case 'disposed':
-      return { bg: '#E5E7EB', color: '#374151', border: '#9CA3AF' };
+      return { bg: '#AAAAAA', color: '#FFFFFF', border: '#999999' };
     case 'completed':
-      return { bg: '#D1FAE5', color: '#065F46', border: '#34D399' };
+      return { bg: '#999999', color: '#FFFFFF', border: '#888888' };
     case 'failed':
-      return { bg: '#FEE2E2', color: '#991B1B', border: '#F87171' };
+      return { bg: '#666666', color: '#FFFFFF', border: '#555555' };
     default:
-      return { bg: '#F3F4F6', color: '#374151', border: '#9CA3AF' };
+      return { bg: '#FAFAFA', color: '#444444', border: '#E0E0E0' };
   }
 };
 

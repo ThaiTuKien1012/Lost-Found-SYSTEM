@@ -19,7 +19,6 @@ export const ROUTES = {
   // Found Items
   FOUND_ITEMS: '/found-items',
   FOUND_ITEM_DETAIL: (id) => `/found-items/${id}`,
-  FOUND_ITEMS_SEARCH: '/found-items/search',
   FOUND_ITEMS_MANAGEMENT: '/found-items/management',
   
   // Matching
@@ -52,7 +51,6 @@ export const ROUTES = {
 export const ROUTE_PERMISSIONS = {
   [ROUTES.LOST_ITEMS]: ['student'],
   [ROUTES.FOUND_ITEMS]: ['student'],
-  [ROUTES.FOUND_ITEMS_SEARCH]: ['student'],
   [ROUTES.MATCHING]: ['student'],
   [ROUTES.RETURNS_MY_TRANSACTIONS]: ['student'],
   

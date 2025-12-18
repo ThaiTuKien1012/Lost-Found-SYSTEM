@@ -132,7 +132,7 @@ const StudentMatchingView = () => {
           <div className="error-enhanced">
             <p>{errorMessage}</p>
             {errorMessage.includes('404') && (
-              <p style={{ marginTop: '10px', fontSize: '14px', color: '#666' }}>
+              <p style={{ marginTop: '10px', fontSize: '14px', color: '#5D6D7E' }}>
                 Vui lòng đảm bảo backend đã được khởi động và route /api/matching đã được đăng ký.
               </p>
             )}

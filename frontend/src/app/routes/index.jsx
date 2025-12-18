@@ -23,7 +23,6 @@ import MatchingPage from '../../pages/shared/MatchingPage';
 import LostItemsPage from '../../pages/student/LostItemsPage';
 import LostItemDetailPage from '../../pages/student/LostItemDetailPage';
 import FoundItemsPage from '../../pages/student/FoundItemsPage';
-import SearchFoundItemsPage from '../../pages/student/SearchFoundItemsPage';
 import FoundItemDetailPage from '../../pages/student/FoundItemDetailPage';
 import MyTransactionsPage from '../../pages/student/MyTransactionsPage';
 
@@ -99,16 +98,6 @@ const AppRoutes = () => {
           <ProtectedRoute>
             <MainLayout>
               <FoundItemsPage />
-            </MainLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path={ROUTES.FOUND_ITEMS_SEARCH}
-        element={
-          <ProtectedRoute>
-            <MainLayout>
-              <SearchFoundItemsPage />
             </MainLayout>
           </ProtectedRoute>
         }

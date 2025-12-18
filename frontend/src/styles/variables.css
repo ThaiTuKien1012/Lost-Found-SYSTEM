@@ -4,32 +4,32 @@
  */
 
 :root {
-  /* Primary Colors */
-  --primary-color: #2180A0;
-  --secondary-color: #5E5240;
+  /* Primary Colors - Monochrome (Softer Gray/White) */
+  --primary-color: #555555;
+  --secondary-color: #666666;
   
-  /* Status Colors */
-  --success-color: #22C55E;
-  --danger-color: #EF4444;
-  --warning-color: #F97316;
-  --info-color: #06B6D4;
+  /* Status Colors - Monochrome (using grayscale) */
+  --success-color: #666666;
+  --danger-color: #555555;
+  --warning-color: #777777;
+  --info-color: #555555;
   
-  /* Background Colors */
-  --bg-primary: #FFFCF9;
-  --bg-secondary: #F5F5F5;
+  /* Background Colors - Monochrome */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #FAFAFA;
   --bg-white: #FFFFFF;
   --bg-overlay: rgba(0, 0, 0, 0.5);
   
-  /* Text Colors */
-  --text-primary: #134252;
-  --text-secondary: #626C7C;
-  --text-muted: #9CA3AF;
+  /* Text Colors - Monochrome (Softer Gray) */
+  --text-primary: #444444;
+  --text-secondary: #666666;
+  --text-muted: #999999;
   --text-white: #FFFFFF;
   
-  /* Border Colors */
-  --border-color: #E5E7EB;
-  --border-light: #F3F4F6;
-  --border-dark: #D1D5DB;
+  /* Border Colors - Monochrome */
+  --border-color: #E0E0E0;
+  --border-light: #F0F0F0;
+  --border-dark: #BBBBBB;
   
   /* Spacing */
   --spacing-xs: 4px;

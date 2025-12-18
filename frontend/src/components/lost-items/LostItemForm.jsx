@@ -277,7 +277,7 @@ const LostItemForm = ({ onSubmit }) => {
           required
           placeholder="Tối thiểu 3 ký tự, tối đa 100 ký tự"
         />
-        <small style={{ color: '#666', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+        <small style={{ color: '#5D6D7E', fontSize: '11px', display: 'block', marginTop: '4px' }}>
           {values.itemName.length}/100 ký tự
         </small>
       </div>
@@ -294,7 +294,7 @@ const LostItemForm = ({ onSubmit }) => {
           required
           placeholder="Tối thiểu 10 ký tự, tối đa 1000 ký tự"
         />
-        <small style={{ color: '#666', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+        <small style={{ color: '#5D6D7E', fontSize: '11px', display: 'block', marginTop: '4px' }}>
           {values.description.length}/1000 ký tự
         </small>
       </div>
@@ -316,7 +316,7 @@ const LostItemForm = ({ onSubmit }) => {
         </div>
 
         <div className="form-group">
-          <label>Màu Sắc <span style={{ color: '#999', fontSize: '12px' }}>(Tùy chọn)</span></label>
+          <label>Màu Sắc <span style={{ color: '#808080', fontSize: '12px' }}>(Tùy chọn)</span></label>
           <input
             type="text"
             name="color"
@@ -384,7 +384,7 @@ const LostItemForm = ({ onSubmit }) => {
             placeholder="0901234567 hoặc 0123456789"
             pattern="^(0[9|1])\d{8,9}$"
           />
-          <small style={{ color: '#666', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+          <small style={{ color: '#5D6D7E', fontSize: '11px', display: 'block', marginTop: '4px' }}>
             Định dạng: 09/01 + 8-9 số
           </small>
         </div>

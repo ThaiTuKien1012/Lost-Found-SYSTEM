@@ -224,7 +224,7 @@ const FoundItemForm = ({ onSubmit }) => {
             className="form-input"
             placeholder="Tối thiểu 3 ký tự, tối đa 100 ký tự"
           />
-          <small style={{ color: '#666', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+          <small style={{ color: '#5D6D7E', fontSize: '11px', display: 'block', marginTop: '4px' }}>
             {values.itemName.length}/100 ký tự
           </small>
         </div>
@@ -259,14 +259,14 @@ const FoundItemForm = ({ onSubmit }) => {
           className="form-textarea"
           placeholder="Tối thiểu 10 ký tự, tối đa 1000 ký tự"
         />
-        <small style={{ color: '#666', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+        <small style={{ color: '#5D6D7E', fontSize: '11px', display: 'block', marginTop: '4px' }}>
           {values.description.length}/1000 ký tự
         </small>
       </div>
 
       <div className="form-row">
         <div className="form-group">
-          <label>Màu Sắc * <span style={{ color: '#999', fontSize: '12px' }}>(Bắt buộc)</span></label>
+          <label>Màu Sắc * <span style={{ color: '#808080', fontSize: '12px' }}>(Bắt buộc)</span></label>
           <input
             type="text"
             name="color"
@@ -277,7 +277,7 @@ const FoundItemForm = ({ onSubmit }) => {
             className="form-input"
             placeholder="Ví dụ: Đen, Trắng, Xanh..."
           />
-          <small style={{ color: '#666', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+          <small style={{ color: '#5D6D7E', fontSize: '11px', display: 'block', marginTop: '4px' }}>
             {values.color.length}/50 ký tự
           </small>
         </div>
@@ -329,7 +329,7 @@ const FoundItemForm = ({ onSubmit }) => {
       </div>
 
       <div className="form-group">
-        <label>Nơi Tìm Được * <span style={{ color: '#999', fontSize: '12px' }}>(Bắt buộc)</span></label>
+        <label>Nơi Tìm Được * <span style={{ color: '#808080', fontSize: '12px' }}>(Bắt buộc)</span></label>
         <input
           type="text"
           name="locationFound"
@@ -340,13 +340,13 @@ const FoundItemForm = ({ onSubmit }) => {
           className="form-input"
           placeholder="Ví dụ: Thư viện tầng 2, Quầy tiếp tân..."
         />
-        <small style={{ color: '#666', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+        <small style={{ color: '#5D6D7E', fontSize: '11px', display: 'block', marginTop: '4px' }}>
           {values.locationFound.length}/200 ký tự
         </small>
       </div>
 
       <div className="form-group">
-        <label>Vị Trí Kho <span style={{ color: '#999', fontSize: '12px' }}>(Tùy chọn)</span></label>
+        <label>Vị Trí Kho <span style={{ color: '#808080', fontSize: '12px' }}>(Tùy chọn)</span></label>
         <input
           type="text"
           name="warehouseLocation"
@@ -356,13 +356,13 @@ const FoundItemForm = ({ onSubmit }) => {
           className="form-input"
           placeholder="Ví dụ: Kho A, Kệ 3"
         />
-        <small style={{ color: '#666', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+        <small style={{ color: '#5D6D7E', fontSize: '11px', display: 'block', marginTop: '4px' }}>
           {values.warehouseLocation.length}/200 ký tự
         </small>
       </div>
 
       <div className="form-group">
-        <label>Hình Ảnh <span style={{ color: '#999', fontSize: '12px' }}>(Tùy chọn, tối đa 5 file, mỗi file 5MB)</span></label>
+        <label>Hình Ảnh <span style={{ color: '#808080', fontSize: '12px' }}>(Tùy chọn, tối đa 5 file, mỗi file 5MB)</span></label>
         <div className="image-upload-section">
           <input
             ref={fileInputRef}
@@ -382,7 +382,7 @@ const FoundItemForm = ({ onSubmit }) => {
             <FiUpload /> {uploading ? 'Đang upload...' : images.length >= 5 ? 'Đã đạt tối đa 5 ảnh' : 'Chọn Hình Ảnh'}
           </button>
           {images.length >= 5 && (
-            <p style={{ color: '#f59e0b', fontSize: '12px', marginTop: '4px' }}>
+            <p style={{ color: '#808080', fontSize: '12px', marginTop: '4px' }}>
               ⚠️ Đã đạt tối đa 5 hình ảnh
             </p>
           )}
