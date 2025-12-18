@@ -38,6 +38,8 @@ const MatchingManagementPage = () => {
   const [studentId, setStudentId] = useState('');
   const [creating, setCreating] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSelectFoundModal, setShowSelectFoundModal] = useState(false);
+  const [matchToConfirm, setMatchToConfirm] = useState(null); // dùng cho staff resolve match
 
   // Fetch Lost Items (verified only)
   const { data: lostItemsData, loading: loadingLost, refetch: refetchLost } = useFetch(
@@ -110,7 +112,7 @@ const MatchingManagementPage = () => {
     return cat ? cat.label : category;
   };
 
-  // Handle create match
+  // Handle create match (từ confirm modal)
   const handleCreateMatch = async () => {
     if (!selectedFoundItem) {
       showError('Vui lòng chọn đồ tìm thấy');
@@ -157,11 +159,11 @@ const MatchingManagementPage = () => {
   // Open confirm modal when both items selected
   const openConfirmModal = () => {
     if (!selectedFoundItem) {
-      showError('Vui lòng chọn đồ tìm thấy từ cột bên phải');
+      showError('Vui lòng chọn đồ tìm thấy');
       return;
     }
     if (!selectedLostItem && !studentId) {
-      showError('Vui lòng chọn đồ báo mất từ cột bên trái hoặc nhập Student ID');
+      showError('Vui lòng chọn đồ báo mất hoặc nhập Student ID');
       return;
     }
     setShowConfirmModal(true);
@@ -183,7 +185,38 @@ const MatchingManagementPage = () => {
     gap: '8px',
   });
 
-  // Render match card for tabs
+  // Staff xác nhận / từ chối match
+  const handleResolveMatch = async (matchId, action) => {
+    const isConfirm = action === 'confirm';
+    if (
+      !window.confirm(
+        isConfirm
+          ? 'Xác nhận match này là chính xác và tiếp tục quy trình trả đồ?'
+          : 'Bạn chắc chắn TỪ CHỐI match này?'
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const result = await matchingService.resolveMatch(
+        matchId,
+        isConfirm ? 'resolved' : 'rejected',
+        isConfirm ? 'Staff confirmed match' : 'Staff rejected match'
+      );
+      if (result.success) {
+        showSuccess(isConfirm ? 'Đã xác nhận match!' : 'Đã từ chối match!');
+        refetchMatches();
+        refetchPending();
+      } else {
+        showError(result.error?.message || 'Cập nhật match thất bại');
+      }
+    } catch (error) {
+      showError('Có lỗi xảy ra khi cập nhật match');
+    }
+  };
+
+  // Render match card cho các tab & overview
   const renderMatchCard = (match, showActions = false) => (
     <div
       key={match._id || match.requestId}
@@ -288,11 +321,67 @@ const MatchingManagementPage = () => {
       )}
 
       {/* Footer */}
-      <div style={{ padding: '12px 16px', background: '#F8F9FA', borderTop: '1px solid #E0E0E0', fontSize: '12px', color: '#999' }}>
-        <FiClock size={12} style={{ marginRight: '4px' }} />
-        Tạo lúc: {formatDate(match.createdAt)}
-        {match.confirmedAt && <span style={{ marginLeft: '16px' }}>✅ Xác nhận: {formatDate(match.confirmedAt)}</span>}
-            </div>
+      <div
+        style={{
+          padding: '12px 16px',
+          background: '#F8F9FA',
+          borderTop: '1px solid #E0E0E0',
+          fontSize: '12px',
+          color: '#999',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '8px'
+        }}
+      >
+        <div>
+          <FiClock size={12} style={{ marginRight: '4px' }} />
+          Tạo lúc: {formatDate(match.createdAt)}
+          {match.confirmedAt && (
+            <span style={{ marginLeft: '16px' }}>✅ Xác nhận: {formatDate(match.confirmedAt)}</span>
+          )}
+        </div>
+
+        {showActions && match.status === 'pending' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              type="button"
+              onClick={() => handleResolveMatch(match._id || match.requestId, 'reject')}
+              style={{
+                padding: '6px 10px',
+                borderRadius: '6px',
+                border: '1px solid #FCA5A5',
+                background: '#FEE2E2',
+                fontSize: '12px',
+                fontWeight: 500,
+                color: '#DC2626',
+                cursor: 'pointer'
+              }}
+            >
+              Từ chối
+            </button>
+            <button
+              type="button"
+              onClick={() => handleResolveMatch(match._id || match.requestId, 'confirm')}
+              style={{
+                padding: '6px 10px',
+                borderRadius: '6px',
+                border: 'none',
+                background: '#16A34A',
+                fontSize: '12px',
+                fontWeight: 600,
+                color: '#FFFFFF',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <FiCheck size={12} /> Xác Nhận
+            </button>
+          </div>
+        )}
+      </div>
             </div>
   );
 
@@ -471,7 +560,7 @@ const MatchingManagementPage = () => {
                       key={item._id}
                       onClick={() => {
                         setSelectedLostItem(item);
-                              showInfo(`Đã chọn "${item.itemName}" làm Đồ Báo Mất. Tiếp tục chọn đồ tìm thấy ở cột bên phải.`);
+                              showInfo(`Đã chọn "${item.itemName}" làm Đồ Báo Mất. Bấm "Ghép với" để chọn đồ tìm thấy tương ứng.`);
                             }}
                             style={{
                               background: selectedLostItem?._id === item._id ? '#FFF' : '#FFFFFF',
@@ -590,7 +679,8 @@ const MatchingManagementPage = () => {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setSelectedLostItem(item);
-                                  showInfo('Đã chọn báo mất này, hãy chọn 1 đồ tìm thấy ở cột bên phải để ghép.');
+                                  setShowSelectFoundModal(true);
+                                  showInfo('Chọn 1 đồ Tìm Thấy để ghép với báo mất này.');
                                 }}
                                 style={{
                                   padding: '6px 10px',
@@ -761,7 +851,7 @@ const MatchingManagementPage = () => {
                       key={item._id}
                       onClick={() => {
                         setSelectedFoundItem(item);
-                              showInfo(`Đã chọn "${item.itemName}" làm Đồ Tìm Thấy. Hãy bấm "Tạo Match" để xác nhận.`);
+                              showInfo(`Đã chọn "${item.itemName}" làm Đồ Tìm Thấy.`);
                             }}
                             style={{
                               background: selectedFoundItem?._id === item._id ? '#FFF' : '#FFFFFF',
@@ -885,7 +975,7 @@ const MatchingManagementPage = () => {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setSelectedFoundItem(item);
-                                  showInfo('Đã chọn đồ tìm thấy này, hãy bấm nút \"Tạo Match\" ở góc trên để hoàn tất.');
+                                  showInfo('Đã chọn đồ tìm thấy này. Ghép bằng cách chọn báo mất ở cột bên trái hoặc dùng popup từ card báo mất.');
                                 }}
                                 style={{
                                   padding: '6px 10px',
@@ -1035,7 +1125,7 @@ const MatchingManagementPage = () => {
                 </div>
 
         {/* Confirm Match Modal */}
-        {showConfirmModal && (
+        {showConfirmModal && selectedFoundItem && (
           <div
             style={{
               position: 'fixed',
@@ -1132,6 +1222,154 @@ const MatchingManagementPage = () => {
                       placeholder="Nhập Student ID"
                       style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #E0E0E0', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
                     />
+          </div>
+        )}
+
+        {/* Select Found Item Modal - mở khi bấm Ghép với trên card LOST */}
+        {showSelectFoundModal && selectedLostItem && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+            }}
+            onClick={() => setShowSelectFoundModal(false)}
+          >
+            <div
+              style={{
+                background: '#FFFFFF',
+                borderRadius: '16px',
+                width: '95%',
+                maxWidth: '720px',
+                maxHeight: '90vh',
+                overflow: 'hidden',
+                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ padding: '18px 20px', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#111827', margin: 0 }}>Chọn đồ Tìm Thấy để ghép</h2>
+                  <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
+                    Đang ghép với: <strong>{selectedLostItem.itemName}</strong>
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowSelectFoundModal(false)}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '6px' }}
+                >
+                  <FiX size={20} color="#6B7280" />
+                </button>
+              </div>
+
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid #E5E7EB' }}>
+                <div style={{ position: 'relative', maxWidth: '360px' }}>
+                  <FiSearch style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+                  <input
+                    type="text"
+                    placeholder="Lọc theo tên, màu, vị trí..."
+                    value={keywordFound}
+                    onChange={(e) => setKeywordFound(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px 8px 32px',
+                      borderRadius: '8px',
+                      border: '1px solid #D1D5DB',
+                      fontSize: '13px',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1 }}>
+                {loadingFound ? (
+                  <div style={{ textAlign: 'center', padding: '40px 8px', fontSize: '13px', color: '#6B7280' }}>
+                    Đang tải danh sách đồ tìm thấy...
+                  </div>
+                ) : filteredFoundItems.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px 8px', fontSize: '13px', color: '#9CA3AF' }}>
+                    Không có đồ tìm thấy phù hợp
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {filteredFoundItems.map((item) => (
+                      <div
+                        key={item._id}
+                        onClick={() => {
+                          setSelectedFoundItem(item);
+                          setShowSelectFoundModal(false);
+                          setShowConfirmModal(true);
+                        }}
+                        style={{
+                          display: 'flex',
+                          gap: '10px',
+                          padding: '10px',
+                          borderRadius: '10px',
+                          border: selectedFoundItem?._id === item._id ? '2px solid #22C55E' : '1px solid #E5E7EB',
+                          cursor: 'pointer',
+                          background: selectedFoundItem?._id === item._id ? '#ECFDF3' : '#FFFFFF'
+                        }}
+                      >
+                        <div style={{ width: '56px', height: '56px', borderRadius: '8px', overflow: 'hidden', background: '#F3F4F6', flexShrink: 0 }}>
+                          {item.images?.[0] ? (
+                            <img src={getImageUrl(item.images[0])} alt={item.itemName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}>
+                              <FiImage size={22} />
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '14px', fontWeight: 600, color: '#111827', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {item.itemName}
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#4B5563', marginBottom: 2 }}>
+                            <FiTag size={11} style={{ marginRight: 4 }} />
+                            {getCategoryLabel(item.category)} • 🎨 {item.color}
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#4B5563', marginBottom: 2 }}>
+                            <FiMapPin size={11} style={{ marginRight: 4 }} />
+                            {item.locationFound}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#6B7280' }}>
+                            <FiCalendar size={11} style={{ marginRight: 4 }} />
+                            {formatDate(item.dateFound)} • 🏷️ {item.foundId}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ padding: '12px 16px', borderTop: '1px solid #E5E7EB', textAlign: 'right' }}>
+                <button
+                  onClick={() => setShowSelectFoundModal(false)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid #D1D5DB',
+                    background: '#FFFFFF',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    color: '#374151',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
