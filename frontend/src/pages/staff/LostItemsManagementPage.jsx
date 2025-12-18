@@ -56,8 +56,8 @@ const LostItemsManagementPage = () => {
         item.itemName?.toLowerCase().includes(query) ||
         item.description?.toLowerCase().includes(query) ||
         item.reportId?.toLowerCase().includes(query)
-      );
-    }
+        );
+      }
 
     // Apply sorting
     if (sortBy) {
@@ -173,8 +173,8 @@ const LostItemsManagementPage = () => {
             >
               Quản Lý Báo Mất
             </h1>
-          </div>
         </div>
+      </div>
 
         {/* Search Bar */}
         <div style={{ maxWidth: '1400px', margin: '0 auto 24px auto' }}>
@@ -223,7 +223,7 @@ const LostItemsManagementPage = () => {
               setPage(1);
             }}
           />
-        </div>
+          </div>
 
         {/* Main Content */}
         <div>
@@ -271,7 +271,7 @@ const LostItemsManagementPage = () => {
                     {stats.total}
                   </div>
                 </div>
-              </div>
+            </div>
 
               {/* Pending Card */}
               <div
@@ -307,7 +307,7 @@ const LostItemsManagementPage = () => {
                     {stats.pending}
                   </div>
                 </div>
-              </div>
+            </div>
 
               {/* Verified Card */}
               <div
@@ -343,7 +343,7 @@ const LostItemsManagementPage = () => {
                     {stats.verified}
                   </div>
                 </div>
-              </div>
+            </div>
 
               {/* Rejected Card */}
               <div
@@ -378,10 +378,10 @@ const LostItemsManagementPage = () => {
                   <div style={{ fontSize: '32px', fontWeight: 700, color: '#000000', lineHeight: 1 }}>
                     {stats.rejected}
                   </div>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
+        </div>
+          </div>
+        )}
 
           {/* Items List */}
           <div>
@@ -420,7 +420,7 @@ const LostItemsManagementPage = () => {
                 }}
               >
                 <p style={{ color: '#FF0000', fontSize: '14px' }}>{typeof error === 'object' ? (error.message || JSON.stringify(error)) : error}</p>
-              </div>
+          </div>
             ) : filteredItems.length === 0 ? (
               <div
                 style={{
@@ -466,19 +466,19 @@ const LostItemsManagementPage = () => {
                                 {report.itemName}
                               </h3>
                               <span
-                                style={{
+                            style={{
                                   padding: '4px 10px',
                                   borderRadius: '20px',
                                   fontSize: '12px',
                                   fontWeight: 500,
-                                  backgroundColor: statusColors.bg,
-                                  color: statusColors.color,
+                              backgroundColor: statusColors.bg,
+                              color: statusColors.color,
                                   border: `1px solid ${statusColors.border}`,
-                                }}
-                              >
-                                {getStatusLabel(report.status)}
+                            }}
+                          >
+                            {getStatusLabel(report.status)}
                               </span>
-                            </div>
+                          </div>
                             <p style={{ fontSize: '14px', color: '#666666', margin: '0 0 8px 0', lineHeight: 1.5 }}>
                               {report.description?.substring(0, 100)}...
                             </p>
@@ -487,14 +487,14 @@ const LostItemsManagementPage = () => {
                               <span>📦 {report.category}</span>
                               <span>📍 {report.campus}</span>
                               <span>📅 {formatDate(report.dateLost)}</span>
-                            </div>
                           </div>
+                        </div>
 
                           {/* Right Section - Actions */}
                           <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                            <Link
-                              to={`/lost-items/${report._id}`}
-                              state={{ from: '/lost-items/management' }}
+                          <Link
+                            to={`/lost-items/${report._id}`}
+                            state={{ from: '/lost-items/management' }}
                               style={{
                                 padding: '8px 12px',
                                 borderRadius: '6px',
@@ -512,15 +512,15 @@ const LostItemsManagementPage = () => {
                               }}
                               onMouseEnter={(e) => (e.target.style.background = '#333333')}
                               onMouseLeave={(e) => (e.target.style.background = '#000000')}
-                            >
+                          >
                               <FiEye size={14} />
                               Xem
-                            </Link>
-                            
-                            {report.status === 'pending' && (
-                              <>
-                                <button
-                                  onClick={() => handleVerify(report._id)}
+                          </Link>
+                          
+                          {report.status === 'pending' && (
+                            <>
+                              <button
+                                onClick={() => handleVerify(report._id)}
                                   style={{
                                     padding: '8px 12px',
                                     borderRadius: '6px',
@@ -541,12 +541,12 @@ const LostItemsManagementPage = () => {
                                   onMouseLeave={(e) => {
                                     e.target.style.background = '#E8F5E9';
                                   }}
-                                >
+                              >
                                   <FiCheckCircle size={14} />
-                                  Xác minh
-                                </button>
-                                <button
-                                  onClick={() => handleReject(report._id)}
+                                Xác minh
+                              </button>
+                              <button
+                                onClick={() => handleReject(report._id)}
                                   style={{
                                     padding: '8px 12px',
                                     borderRadius: '6px',
@@ -567,15 +567,15 @@ const LostItemsManagementPage = () => {
                                   onMouseLeave={(e) => {
                                     e.target.style.background = '#FFF3E0';
                                   }}
-                                >
+                              >
                                   <FiXCircle size={14} />
-                                  Từ chối
-                                </button>
-                              </>
-                            )}
-                            
-                            <button
-                              onClick={() => handleDelete(report._id)}
+                                Từ chối
+                              </button>
+                            </>
+                          )}
+                          
+                          <button
+                            onClick={() => handleDelete(report._id)}
                               style={{
                                 padding: '8px 12px',
                                 borderRadius: '6px',
@@ -596,10 +596,10 @@ const LostItemsManagementPage = () => {
                               onMouseLeave={(e) => {
                                 e.target.style.background = '#FFEBEE';
                               }}
-                            >
+                          >
                               <FiTrash2 size={14} />
-                              Xóa
-                            </button>
+                            Xóa
+                          </button>
                           </div>
                         </div>
                       </div>
@@ -638,7 +638,7 @@ const LostItemsManagementPage = () => {
                     <span style={{ fontSize: '14px', color: '#666666' }}>
                       Trang {page} / {data.pagination.pages}
                     </span>
-                    <button
+                      <button
                       onClick={() => setPage(p => Math.min(data.pagination.pages, p + 1))}
                       disabled={page === data.pagination.pages}
                       style={{
@@ -652,9 +652,9 @@ const LostItemsManagementPage = () => {
                         cursor: page === data.pagination.pages ? 'not-allowed' : 'pointer',
                         transition: 'all 0.2s',
                       }}
-                    >
+                      >
                       Sau
-                    </button>
+                      </button>
                   </div>
                 )}
               </>
