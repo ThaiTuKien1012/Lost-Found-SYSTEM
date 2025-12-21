@@ -1,34 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDate, formatRelativeTime } from '../../utils/helpers';
-import { getStatusLabel } from '../../utils/helpers';
 import { 
   FiPackage, 
   FiCalendar, 
-  FiMapPin, 
   FiArrowRight, 
   FiImage,
   FiEdit,
   FiTrash2,
-  FiShare2,
-  FiHeart,
-  FiMoreVertical,
   FiClock,
-  FiTrendingUp,
-  FiCheckCircle,
-  FiXCircle,
-  FiAlertCircle
+  FiAlertTriangle,
+  FiX
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import lostItemService from '../../api/lostItemService';
 import { useNotification } from '../../hooks/useNotification';
+import LostItemForm from './LostItemForm';
 
 const LostItemList = ({ items, pagination, onPageChange, onItemDeleted, onItemUpdated }) => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
-  const [favorites, setFavorites] = useState(new Set());
-  const [activeMenu, setActiveMenu] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState({});
+  const [deleteConfirm, setDeleteConfirm] = useState({ show: false, itemId: null, itemName: '' });
+  const [editForm, setEditForm] = useState({ show: false, item: null, loading: false });
 
   // Get BASE_URL for static files (without /api)
   const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '');
@@ -37,35 +31,6 @@ const LostItemList = ({ items, pagination, onPageChange, onItemDeleted, onItemUp
     return <FiPackage size={14} />;
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'pending':
-        return <FiClock size={14} />;
-      case 'verified':
-        return <FiCheckCircle size={14} />;
-      case 'rejected':
-        return <FiXCircle size={14} />;
-      case 'returned':
-        return <FiCheckCircle size={14} />;
-      default:
-        return <FiAlertCircle size={14} />;
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'pending':
-        return { bg: '#F5F5F5', color: '#000000', border: '#D0D0D0', icon: '#666666' };
-      case 'verified':
-        return { bg: '#EEEEEE', color: '#000000', border: '#CCCCCC', icon: '#333333' };
-      case 'rejected':
-        return { bg: '#E0E0E0', color: '#000000', border: '#BBBBBB', icon: '#666666' };
-      case 'returned':
-        return { bg: '#D0D0D0', color: '#000000', border: '#AAAAAA', icon: '#333333' };
-      default:
-        return { bg: '#FAFAFA', color: '#000000', border: '#E0E0E0', icon: '#666666' };
-    }
-  };
 
   // Convert relative URL to absolute URL for display
   const getImageUrl = (url) => {
@@ -75,64 +40,78 @@ const LostItemList = ({ items, pagination, onPageChange, onItemDeleted, onItemUp
     return `${BASE_URL}/uploads/${url}`;
   };
 
-  const handleFavorite = (itemId, e) => {
+
+  const handleEdit = async (itemId, e) => {
     e.stopPropagation();
-    setFavorites(prev => {
-      const newFavorites = new Set(prev);
-      if (newFavorites.has(itemId)) {
-        newFavorites.delete(itemId);
+    setEditForm({ show: true, item: null, loading: true });
+    
+    try {
+      const result = await lostItemService.getReport(itemId);
+      if (result.success && result.data) {
+        setEditForm({ show: true, item: result.data, loading: false });
       } else {
-        newFavorites.add(itemId);
+        showError('Không thể tải thông tin báo cáo');
+        setEditForm({ show: false, item: null, loading: false });
       }
-      return newFavorites;
-    });
-  };
-
-  const handleShare = async (item, e) => {
-    e.stopPropagation();
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: item.itemName,
-          text: item.description,
-          url: window.location.origin + `/lost-items/${item._id}`
-        });
-      } catch (err) {
-        // User cancelled or error
-      }
-    } else {
-      // Fallback: copy to clipboard
-      const url = window.location.origin + `/lost-items/${item._id}`;
-      navigator.clipboard.writeText(url);
-      showSuccess('Đã sao chép link vào clipboard');
+    } catch (error) {
+      showError('Có lỗi xảy ra khi tải thông tin báo cáo');
+      setEditForm({ show: false, item: null, loading: false });
     }
-    setActiveMenu(null);
   };
 
-  const handleEdit = (itemId, e) => {
-    e.stopPropagation();
-    navigate(`/lost-items/${itemId}/edit`);
-    setActiveMenu(null);
-  };
-
-  const handleDelete = async (itemId, e) => {
-    e.stopPropagation();
-    if (window.confirm('Bạn có chắc chắn muốn xóa báo cáo này?')) {
-      try {
-        const result = await lostItemService.deleteReport(itemId);
-        if (result.success) {
-          showSuccess('Đã xóa báo cáo thành công');
-          if (onItemDeleted) {
-            onItemDeleted(itemId);
-          }
-        } else {
-          showError(result.error?.message || 'Xóa báo cáo thất bại');
+  const handleUpdateReport = async (formData) => {
+    if (!editForm.item) return;
+    
+    try {
+      console.log('📝 Updating report with data:', formData);
+      const result = await lostItemService.updateReport(editForm.item._id, formData);
+      console.log('📝 Update result:', result);
+      
+      if (result.success) {
+        showSuccess('Cập nhật báo cáo thành công!');
+        setEditForm({ show: false, item: null, loading: false });
+        if (onItemUpdated) {
+          onItemUpdated(editForm.item._id);
         }
-      } catch (error) {
-        showError('Có lỗi xảy ra khi xóa báo cáo');
+      } else {
+        showError(result.error?.message || result.error || 'Cập nhật thất bại');
       }
+    } catch (error) {
+      console.error('❌ Update error:', error);
+      showError('Có lỗi xảy ra khi cập nhật báo cáo');
     }
-    setActiveMenu(null);
+  };
+
+  const handleCloseEditForm = () => {
+    setEditForm({ show: false, item: null, loading: false });
+  };
+
+  const handleDeleteClick = (itemId, itemName, e) => {
+    e.stopPropagation();
+    setDeleteConfirm({ show: true, itemId, itemName });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm.itemId) return;
+    
+    try {
+      const result = await lostItemService.deleteReport(deleteConfirm.itemId);
+      if (result.success) {
+        showSuccess('Đã xóa báo cáo thành công');
+        if (onItemDeleted) {
+          onItemDeleted(deleteConfirm.itemId);
+        }
+        setDeleteConfirm({ show: false, itemId: null, itemName: '' });
+      } else {
+        showError(result.error?.message || 'Xóa báo cáo thất bại');
+      }
+    } catch (error) {
+      showError('Có lỗi xảy ra khi xóa báo cáo');
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirm({ show: false, itemId: null, itemName: '' });
   };
 
   const handleImageNavigation = (itemId, direction, totalImages, e) => {
@@ -149,15 +128,6 @@ const LostItemList = ({ items, pagination, onPageChange, onItemDeleted, onItemUp
     });
   };
 
-  const getMatchingCount = (item) => {
-    // This would come from API, for now return 0 or mock data
-    return item.matchingCount || 0;
-  };
-
-  const getConfidenceScore = (item) => {
-    // This would come from API if item has matches
-    return item.confidenceScore || null;
-  };
 
   const getRelativeTime = (date) => {
     if (!date) return '';
@@ -172,8 +142,8 @@ const LostItemList = ({ items, pagination, onPageChange, onItemDeleted, onItemUp
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-        gap: '24px',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+        gap: '16px',
         fontFamily: '"Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif',
       }}
     >
@@ -182,29 +152,25 @@ const LostItemList = ({ items, pagination, onPageChange, onItemDeleted, onItemUp
           style={{
             gridColumn: '1 / -1',
             textAlign: 'center',
-            padding: '60px 20px',
+            padding: '40px 20px',
             background: '#FFFFFF',
-            borderRadius: '16px',
+            borderRadius: '12px',
             border: '1px solid #E0E0E0',
           }}
         >
-          <FiPackage size={64} color="#999999" style={{ marginBottom: '16px' }} />
-          <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#333333', marginBottom: '8px' }}>
+          <FiPackage size={48} color="#999999" style={{ marginBottom: '12px' }} />
+          <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#333333', marginBottom: '6px' }}>
             Chưa có báo cáo nào
           </h3>
-          <p style={{ fontSize: '14px', color: '#666666' }}>
+          <p style={{ fontSize: '13px', color: '#666666' }}>
             Bắt đầu bằng cách tạo báo cáo mất đồ mới
           </p>
         </div>
       ) : (
         items.map((item) => {
-          const statusColors = getStatusColor(item.status);
           const images = item.images || [];
           const currentIndex = currentImageIndex[item._id] || 0;
           const imageUrl = images.length > 0 ? getImageUrl(images[currentIndex]) : null;
-          const matchingCount = getMatchingCount(item);
-          const confidenceScore = getConfidenceScore(item);
-          const isFavorite = favorites.has(item._id);
           const relativeTime = getRelativeTime(item.updatedAt || item.createdAt);
 
           return (
@@ -215,17 +181,17 @@ const LostItemList = ({ items, pagination, onPageChange, onItemDeleted, onItemUp
               transition={{ duration: 0.3 }}
               style={{
                 background: '#FFFFFF',
-                borderRadius: '16px',
+                borderRadius: '12px',
                 border: '1px solid #E0E0E0',
                 overflow: 'hidden',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.04)',
                 transition: 'all 0.3s ease',
                 cursor: 'pointer',
                 position: 'relative',
               }}
               whileHover={{
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1)',
-                y: -4,
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+                y: -2,
               }}
               onClick={() => navigate(`/lost-items/${item._id}`)}
             >
@@ -234,7 +200,7 @@ const LostItemList = ({ items, pagination, onPageChange, onItemDeleted, onItemUp
                 style={{
                   position: 'relative',
                   width: '100%',
-                  height: '200px',
+                  height: '180px',
                   background: '#F5F5F5',
                   overflow: 'hidden',
                 }}
@@ -358,143 +324,17 @@ const LostItemList = ({ items, pagination, onPageChange, onItemDeleted, onItemUp
                   </div>
                 )}
 
-                {/* Status Badge */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '12px',
-                    left: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '6px 12px',
-                    borderRadius: '20px',
-                    background: statusColors.bg,
-                    color: statusColors.color,
-                    border: `1px solid ${statusColors.border}`,
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                  }}
-                >
-                  {getStatusIcon(item.status)}
-                  {getStatusLabel(item.status)}
-                </div>
-
-                {/* More Menu Button */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '12px',
-                    right: '12px',
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveMenu(activeMenu === item._id ? null : item._id);
-                  }}
-                >
-                  <button
-                    style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '8px',
-                      background: 'rgba(255, 255, 255, 0.9)',
-                      border: 'none',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#333333',
-                      transition: 'all 0.2s',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = '#FFFFFF';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                    }}
-                  >
-                    <FiMoreVertical size={18} />
-                  </button>
-
-                  {/* Dropdown Menu */}
-                  {activeMenu === item._id && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '40px',
-                        right: 0,
-                        background: '#FFFFFF',
-                        borderRadius: '8px',
-                        border: '1px solid #E0E0E0',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                        minWidth: '160px',
-                        zIndex: 100,
-                        overflow: 'hidden',
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        onClick={(e) => handleEdit(item._id, e)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 16px',
-                          background: 'transparent',
-                          border: 'none',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          fontSize: '14px',
-                          fontWeight: 400,
-                          color: '#333333',
-                          transition: 'background 0.2s',
-                        }}
-                        onMouseEnter={(e) => (e.target.style.background = '#F5F5F5')}
-                        onMouseLeave={(e) => (e.target.style.background = 'transparent')}
-                      >
-                        <FiEdit size={16} />
-                        Sửa
-                      </button>
-                      <button
-                        onClick={(e) => handleDelete(item._id, e)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 16px',
-                          background: 'transparent',
-                          border: 'none',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          fontSize: '14px',
-                          fontWeight: 400,
-                          color: '#FF0000',
-                          transition: 'background 0.2s',
-                        }}
-                        onMouseEnter={(e) => (e.target.style.background = '#F5F5F5')}
-                        onMouseLeave={(e) => (e.target.style.background = 'transparent')}
-                      >
-                        <FiTrash2 size={16} />
-                        Xóa
-                      </button>
-                    </div>
-                  )}
-                </div>
               </div>
 
               {/* Content Section */}
-              <div style={{ padding: '20px' }}>
+              <div style={{ padding: '16px' }}>
                 {/* Title */}
                 <h3
                   style={{
                     fontSize: '18px',
                     fontWeight: 700,
                     color: '#000000',
-                    marginBottom: '8px',
+                    marginBottom: '6px',
                     lineHeight: 1.3,
                   }}
                 >
@@ -504,36 +344,25 @@ const LostItemList = ({ items, pagination, onPageChange, onItemDeleted, onItemUp
                 {/* Description */}
                 <p
                   style={{
-                    fontSize: '14px',
+                    fontSize: '13px',
                     fontWeight: 400,
                     color: '#666666',
-                    marginBottom: '16px',
-                    lineHeight: 1.5,
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
+                    marginBottom: '12px',
+                    lineHeight: 1.4,
                   }}
                 >
                   {item.description}
                 </p>
 
-                {/* Meta Tags */}
-                <div
-                  style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '8px',
-                    marginBottom: '16px',
-                  }}
-                >
+                {/* Category Tag */}
+                <div style={{ marginBottom: '12px' }}>
                   <span
                     style={{
-                      display: 'flex',
+                      display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '4px',
-                      padding: '4px 10px',
-                      borderRadius: '12px',
+                      gap: '6px',
+                      padding: '6px 12px',
+                      borderRadius: '16px',
                       background: '#F5F5F5',
                       fontSize: '12px',
                       fontWeight: 500,
@@ -543,38 +372,6 @@ const LostItemList = ({ items, pagination, onPageChange, onItemDeleted, onItemUp
                     {getCategoryIcon(item.category)}
                     {item.category}
                   </span>
-                  {item.color && (
-                    <span
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: '12px',
-                        background: '#F5F5F5',
-                        fontSize: '12px',
-                        fontWeight: 500,
-                        color: '#333333',
-                      }}
-                    >
-                      🎨 {item.color}
-                    </span>
-                  )}
-                  {item.locationLost && (
-                    <span
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        padding: '4px 10px',
-                        borderRadius: '12px',
-                        background: '#F5F5F5',
-                        fontSize: '12px',
-                        fontWeight: 500,
-                        color: '#333333',
-                      }}
-                    >
-                      <FiMapPin size={12} />
-                      {item.locationLost}
-                    </span>
-                  )}
                 </div>
 
                 {/* Date and Time Info */}
@@ -582,49 +379,23 @@ const LostItemList = ({ items, pagination, onPageChange, onItemDeleted, onItemUp
                   style={{
                     display: 'flex',
                     flexWrap: 'wrap',
-                    gap: '12px',
+                    gap: '16px',
                     marginBottom: '16px',
                     fontSize: '12px',
-                    color: '#999999',
+                    color: '#666666',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <FiCalendar size={14} />
-                    <span>{formatDate(item.dateLost)}</span>
+                    <FiCalendar size={14} color="#666666" />
+                    <span>{formatDate(item.dateLost || item.createdAt)}</span>
                   </div>
                   {relativeTime && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <FiClock size={14} />
+                      <FiClock size={14} color="#666666" />
                       <span>{relativeTime}</span>
                     </div>
                   )}
                 </div>
-
-                {/* Matching Info */}
-                {matchingCount > 0 && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      background: '#F5F5F5',
-                      marginBottom: '16px',
-                      fontSize: '12px',
-                      fontWeight: 500,
-                      color: '#333333',
-                    }}
-                  >
-                    <FiTrendingUp size={14} />
-                    <span>{matchingCount} khớp tiềm năng</span>
-                    {confidenceScore && (
-                      <span style={{ marginLeft: 'auto', color: '#666666' }}>
-                        Độ tin cậy: {confidenceScore}%
-                      </span>
-                    )}
-                  </div>
-                )}
 
                 {/* Action Buttons */}
                 <div
@@ -632,47 +403,17 @@ const LostItemList = ({ items, pagination, onPageChange, onItemDeleted, onItemUp
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
-                    paddingTop: '16px',
-                    borderTop: '1px solid #E0E0E0',
                   }}
                 >
                   <button
-                    onClick={(e) => handleFavorite(item._id, e)}
+                    onClick={(e) => handleEdit(item._id, e)}
                     style={{
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      border: '1px solid #E0E0E0',
-                      background: isFavorite ? '#F5F5F5' : '#FFFFFF',
-                      color: isFavorite ? '#FF0000' : '#333333',
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      transition: 'all 0.2s',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = '#F5F5F5';
-                      e.target.style.borderColor = '#D1D5DB';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = isFavorite ? '#F5F5F5' : '#FFFFFF';
-                      e.target.style.borderColor = '#E0E0E0';
-                    }}
-                  >
-                    <FiHeart size={16} fill={isFavorite ? '#FF0000' : 'none'} />
-                    <span>Yêu thích</span>
-                  </button>
-                  <button
-                    onClick={(e) => handleShare(item, e)}
-                    style={{
-                      padding: '8px 12px',
-                      borderRadius: '8px',
+                      padding: '8px 14px',
+                      borderRadius: '6px',
                       border: '1px solid #E0E0E0',
                       background: '#FFFFFF',
                       color: '#333333',
-                      fontSize: '14px',
+                      fontSize: '13px',
                       fontWeight: 500,
                       cursor: 'pointer',
                       display: 'flex',
@@ -689,8 +430,36 @@ const LostItemList = ({ items, pagination, onPageChange, onItemDeleted, onItemUp
                       e.target.style.borderColor = '#E0E0E0';
                     }}
                   >
-                    <FiShare2 size={16} />
-                    <span>Chia sẻ</span>
+                    <FiEdit size={16} />
+                    <span>Sửa</span>
+                  </button>
+                  <button
+                    onClick={(e) => handleDeleteClick(item._id, item.itemName, e)}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '6px',
+                      border: '1px solid #E0E0E0',
+                      background: '#FFFFFF',
+                      color: '#DC2626',
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.background = '#FEF2F2';
+                      e.target.style.borderColor = '#DC2626';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = '#FFFFFF';
+                      e.target.style.borderColor = '#E0E0E0';
+                    }}
+                  >
+                    <FiTrash2 size={16} color="#DC2626" />
+                    <span>Xóa</span>
                   </button>
                   <Link
                     to={`/lost-items/${item._id}`}
@@ -698,10 +467,10 @@ const LostItemList = ({ items, pagination, onPageChange, onItemDeleted, onItemUp
                     style={{
                       marginLeft: 'auto',
                       padding: '8px 16px',
-                      borderRadius: '8px',
+                      borderRadius: '6px',
                       background: '#000000',
                       color: '#FFFFFF',
-                      fontSize: '14px',
+                      fontSize: '13px',
                       fontWeight: 600,
                       textDecoration: 'none',
                       display: 'flex',
@@ -730,8 +499,8 @@ const LostItemList = ({ items, pagination, onPageChange, onItemDeleted, onItemUp
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            gap: '8px',
-            marginTop: '32px',
+            gap: '6px',
+            marginTop: '24px',
           }}
         >
           {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((pageNum) => (
@@ -739,14 +508,14 @@ const LostItemList = ({ items, pagination, onPageChange, onItemDeleted, onItemUp
               key={pageNum}
               onClick={() => onPageChange(pageNum)}
               style={{
-                minWidth: '40px',
-                height: '40px',
-                padding: '8px 12px',
-                borderRadius: '8px',
+                minWidth: '36px',
+                height: '36px',
+                padding: '6px 10px',
+                borderRadius: '6px',
                 border: '1px solid #E0E0E0',
                 background: pageNum === pagination.currentPage ? '#000000' : '#FFFFFF',
                 color: pageNum === pagination.currentPage ? '#FFFFFF' : '#333333',
-                fontSize: '14px',
+                fontSize: '13px',
                 fontWeight: pageNum === pagination.currentPage ? 600 : 500,
                 cursor: 'pointer',
                 transition: 'all 0.2s',
@@ -770,16 +539,321 @@ const LostItemList = ({ items, pagination, onPageChange, onItemDeleted, onItemUp
         </div>
       )}
 
-      {/* Click outside to close menu */}
-      {activeMenu && (
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm.show && (
         <div
           style={{
             position: 'fixed',
             inset: 0,
-            zIndex: 50,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px',
           }}
-          onClick={() => setActiveMenu(null)}
-        />
+          onClick={handleDeleteCancel}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              background: '#FFFFFF',
+              borderRadius: '12px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+              width: '100%',
+              maxWidth: '400px',
+              overflow: 'hidden',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: '20px 24px',
+                borderBottom: '1px solid #E0E0E0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '8px',
+                    background: '#FEF2F2',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#DC2626',
+                  }}
+                >
+                  <FiAlertTriangle size={20} />
+                </div>
+                <h3
+                  style={{
+                    fontSize: '18px',
+                    fontWeight: 600,
+                    color: '#333333',
+                    margin: 0,
+                  }}
+                >
+                  Xác nhận xóa
+                </h3>
+              </div>
+              <button
+                onClick={handleDeleteCancel}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '6px',
+                  border: '1px solid #E0E0E0',
+                  background: '#FFFFFF',
+                  color: '#666666',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#F5F5F5';
+                  e.target.style.borderColor = '#D1D5DB';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = '#FFFFFF';
+                  e.target.style.borderColor = '#E0E0E0';
+                }}
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '24px' }}>
+              <p
+                style={{
+                  fontSize: '14px',
+                  fontWeight: 400,
+                  color: '#333333',
+                  lineHeight: 1.6,
+                  margin: 0,
+                  marginBottom: '8px',
+                }}
+              >
+                Bạn có chắc chắn muốn xóa báo cáo này?
+              </p>
+              {deleteConfirm.itemName && (
+                <p
+                  style={{
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    color: '#666666',
+                    margin: 0,
+                    padding: '8px 12px',
+                    background: '#F5F5F5',
+                    borderRadius: '6px',
+                  }}
+                >
+                  "{deleteConfirm.itemName}"
+                </p>
+              )}
+              <p
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 400,
+                  color: '#999999',
+                  margin: '12px 0 0 0',
+                }}
+              >
+                Hành động này không thể hoàn tác.
+              </p>
+            </div>
+
+            {/* Modal Footer */}
+            <div
+              style={{
+                padding: '16px 24px',
+                borderTop: '1px solid #E0E0E0',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '12px',
+              }}
+            >
+              <button
+                onClick={handleDeleteCancel}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '6px',
+                  border: '1px solid #E0E0E0',
+                  background: '#FFFFFF',
+                  color: '#333333',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#F5F5F5';
+                  e.target.style.borderColor = '#D1D5DB';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = '#FFFFFF';
+                  e.target.style.borderColor = '#E0E0E0';
+                }}
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: '#DC2626',
+                  color: '#FFFFFF',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#B91C1C';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = '#DC2626';
+                }}
+              >
+                Xóa
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Edit Form Modal */}
+      {editForm.show && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px',
+          }}
+          onClick={handleCloseEditForm}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              background: '#FFFFFF',
+              borderRadius: '12px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+              width: '100%',
+              maxWidth: '700px',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: '20px 24px',
+                borderBottom: '1px solid #E0E0E0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <h3
+                style={{
+                  fontSize: '20px',
+                  fontWeight: 600,
+                  color: '#333333',
+                  margin: 0,
+                }}
+              >
+                Chỉnh sửa báo cáo
+              </h3>
+              <button
+                onClick={handleCloseEditForm}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '6px',
+                  border: '1px solid #E0E0E0',
+                  background: '#FFFFFF',
+                  color: '#666666',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#F5F5F5';
+                  e.target.style.borderColor = '#D1D5DB';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = '#FFFFFF';
+                  e.target.style.borderColor = '#E0E0E0';
+                }}
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div
+              style={{
+                padding: '24px',
+                overflowY: 'auto',
+                flex: 1,
+              }}
+            >
+              {editForm.loading ? (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '40px 20px',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      border: '3px solid #E0E0E0',
+                      borderTopColor: '#333333',
+                      borderRadius: '50%',
+                      animation: 'spin 0.8s linear infinite',
+                      marginBottom: '16px',
+                    }}
+                  />
+                  <p style={{ color: '#666666', fontSize: '14px' }}>Đang tải...</p>
+                </div>
+              ) : editForm.item ? (
+                <LostItemForm
+                  initialData={editForm.item}
+                  onSubmit={handleUpdateReport}
+                />
+              ) : null}
+            </div>
+          </motion.div>
+        </div>
       )}
     </div>
   );

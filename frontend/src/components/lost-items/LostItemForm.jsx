@@ -6,7 +6,7 @@ import { CATEGORIES, CAMPUSES } from '../../utils/constants';
 import uploadService from '../../api/uploadService';
 import { FiX } from 'react-icons/fi';
 
-const LostItemForm = ({ onSubmit }) => {
+const LostItemForm = ({ onSubmit, initialData = null }) => {
   const { showError, showSuccess, showWarning } = useNotification();
   const { user } = useAuth();
   const [images, setImages] = useState([]); // URLs từ server
@@ -15,16 +15,19 @@ const LostItemForm = ({ onSubmit }) => {
   const [dateWarning, setDateWarning] = useState(null);
   const fileInputRef = useRef(null);
 
+  // Get BASE_URL for static files
+  const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '');
+
   const { values, handleChange, handleSubmit, setValues } = useForm(
     {
-      itemName: '',
-      description: '',
-      category: '',
-      color: '',
-      dateLost: '',
-      locationLost: '',
-      campus: user?.campus || 'NVH', // Pre-fill from user
-      phone: '',
+      itemName: initialData?.itemName || '',
+      description: initialData?.description || '',
+      category: initialData?.category || '',
+      color: initialData?.color || '',
+      dateLost: initialData?.dateLost ? new Date(initialData.dateLost).toISOString().split('T')[0] : '',
+      locationLost: initialData?.locationLost || '',
+      campus: initialData?.campus || user?.campus || 'NVH',
+      phone: initialData?.phone || '',
       images: []
     },
     async (formData) => {
@@ -96,6 +99,27 @@ const LostItemForm = ({ onSubmit }) => {
           return;
         }
 
+        // Convert absolute URLs back to relative URLs for storage (when editing)
+        const imageUrlsForStorage = images.map(url => {
+          if (!url) return url;
+          // If URL contains BASE_URL, extract relative path
+          if (url.includes(BASE_URL)) {
+            return url.replace(BASE_URL, '');
+          }
+          // If already relative, use as is
+          if (url.startsWith('/')) return url;
+          // If it's already a full URL from another source, extract path
+          if (url.startsWith('http')) {
+            try {
+              const urlObj = new URL(url);
+              return urlObj.pathname;
+            } catch (e) {
+              return url;
+            }
+          }
+          return url;
+        });
+
         // Sanitize HTML
         const sanitizedData = {
           ...formData,
@@ -104,14 +128,20 @@ const LostItemForm = ({ onSubmit }) => {
           color: formData.color ? formData.color.trim() : '',
           locationLost: formData.locationLost ? formData.locationLost.trim() : '',
           phone: formData.phone ? formData.phone.trim() : '',
-          images: images
+          images: imageUrlsForStorage
         };
 
+        console.log('📤 Submitting form data:', sanitizedData);
+        console.log('🖼️ Original images:', images);
+        console.log('🖼️ Converted images:', imageUrlsForStorage);
+        
         await onSubmit(sanitizedData);
-        // Reset images sau khi submit thành công
-        setImages([]);
-        setPreviewImages([]);
-        setDateWarning(null);
+        // Reset images sau khi submit thành công (chỉ khi tạo mới)
+        if (!initialData) {
+          setImages([]);
+          setPreviewImages([]);
+          setDateWarning(null);
+        }
       } catch (error) {
         showError(error.message);
       }
@@ -127,6 +157,34 @@ const LostItemForm = ({ onSubmit }) => {
       }));
     }
   }, [user, setValues, values.campus]);
+
+  // Load initial data when editing
+  useEffect(() => {
+    if (initialData) {
+      // Convert relative URLs to absolute URLs for images
+      const imageUrls = (initialData.images || []).map(url => {
+        if (!url) return null;
+        if (url.startsWith('http')) return url;
+        if (url.startsWith('/')) return `${BASE_URL}${url}`;
+        return `${BASE_URL}/uploads/${url}`;
+      }).filter(Boolean);
+      
+      setImages(imageUrls);
+      
+      // Update form values
+      setValues({
+        itemName: initialData.itemName || '',
+        description: initialData.description || '',
+        category: initialData.category || '',
+        color: initialData.color || '',
+        dateLost: initialData.dateLost ? new Date(initialData.dateLost).toISOString().split('T')[0] : '',
+        locationLost: initialData.locationLost || '',
+        campus: initialData.campus || user?.campus || 'NVH',
+        phone: initialData.phone || '',
+        images: []
+      });
+    }
+  }, [initialData, BASE_URL, setValues, user]);
 
   // Check date warning
   const handleDateChange = (e) => {
@@ -463,7 +521,7 @@ const LostItemForm = ({ onSubmit }) => {
       </div>
 
       <button type="submit" className="btn btn-primary" disabled={uploading}>
-        Tạo Báo Cáo
+        {initialData ? 'Cập nhật' : 'Tạo Báo Cáo'}
       </button>
     </form>
   );

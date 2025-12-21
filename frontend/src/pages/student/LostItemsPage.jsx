@@ -6,7 +6,7 @@ import lostItemService from '../../api/lostItemService';
 import LostItemForm from '../../components/lost-items/LostItemForm';
 import LostItemList from '../../components/lost-items/LostItemList';
 import SearchBar from '../../components/common/SearchBar';
-import { FiPlus, FiX, FiPackage, FiClock, FiCheckCircle, FiXCircle, FiTrendingUp } from 'react-icons/fi';
+import { FiX, FiPackage, FiClock, FiCheckCircle, FiXCircle, FiTrendingUp } from 'react-icons/fi';
 
 const LostItemsPage = () => {
   const { user } = useAuth();
@@ -24,9 +24,10 @@ const LostItemsPage = () => {
   );
 
   // Fetch all items for statistics and filtering
+  const [refreshKey, setRefreshKey] = useState(0);
   const { data: allData } = useFetch(
     () => lostItemService.getMyReports(1, 1000),
-    []
+    [refreshKey]
   );
 
   // Calculate statistics
@@ -144,10 +145,14 @@ const LostItemsPage = () => {
 
   const handleItemDeleted = (itemId) => {
     refetch();
-    // Refetch all data for stats
-    if (allData) {
-      window.location.reload();
-    }
+    // Trigger refresh of all data for stats
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const handleItemUpdated = (itemId) => {
+    refetch();
+    // Trigger refresh of all data for stats
+    setRefreshKey(prev => prev + 1);
   };
 
   const handleCreateReport = async (formData) => {
@@ -158,11 +163,11 @@ const LostItemsPage = () => {
         showWarning(result.warning);
       }
       setShowForm(false);
+      // Jump to page 1 to show the newly created report (which will be at the top due to desc sort)
+      setPage(1);
       refetch();
-      // Refetch all data for stats
-      if (allData) {
-        window.location.reload();
-      }
+      // Trigger refresh of all data for stats
+      setRefreshKey(prev => prev + 1);
     } else {
       showError(result.error?.message || result.error || 'Tạo báo cáo thất bại');
     }
@@ -217,52 +222,52 @@ const LostItemsPage = () => {
     <div
       style={{
         minHeight: '100vh',
-        padding: '40px',
+        padding: '24px',
         background: '#F5F5F5',
         fontFamily: '"Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif',
       }}
     >
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Page Header */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: '32px',
+            marginBottom: '20px',
             flexWrap: 'wrap',
-            gap: '16px',
+            gap: '12px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <FiPackage size={28} color="#333333" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <FiPackage size={24} color="#333333" />
             <h1
               style={{
-                fontSize: '28px',
-                fontWeight: 700,
+                fontSize: '22px',
+                fontWeight: 600,
                 color: '#333333',
-                letterSpacing: '-0.02em',
+                letterSpacing: '-0.01em',
                 margin: 0,
               }}
             >
               Báo Cáo Đồ Thất Lạc
             </h1>
           </div>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <button
               onClick={toggleForm}
               style={{
-                padding: '10px 20px',
-                borderRadius: '8px',
+                padding: '8px 16px',
+                borderRadius: '6px',
                 background: showForm ? '#666666' : '#000000',
                 color: '#FFFFFF',
-                fontSize: '14px',
+                fontSize: '13px',
                 fontWeight: 600,
                 border: 'none',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                gap: '6px',
                 transition: 'all 0.2s',
               }}
               onMouseEnter={(e) => (e.target.style.background = showForm ? '#555555' : '#333333')}
@@ -270,21 +275,18 @@ const LostItemsPage = () => {
           >
             {showForm ? (
               <>
-                  <FiX size={16} />
+                <FiX size={16} />
                 <span>Hủy</span>
               </>
             ) : (
-              <>
-                  <FiPlus size={16} />
-                <span>Tạo Báo Cáo Mới</span>
-              </>
+              <span>Tạo Báo Cáo Mới</span>
             )}
           </button>
         </div>
       </div>
 
       {/* Search Bar - Search, Filter and Sort */}
-      <div style={{ maxWidth: '1400px', margin: '0 auto 24px auto' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto 20px auto' }}>
         <SearchBar
           value={searchQuery}
           onChange={setSearchQuery}
@@ -340,27 +342,27 @@ const LostItemsPage = () => {
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: '16px',
-                  marginBottom: '32px',
+                  gap: '12px',
+                  marginBottom: '20px',
                 }}
               >
                 {/* Total Card */}
                 <div
                   style={{
                     background: '#FFFFFF',
-                    borderRadius: '12px',
-                    padding: '20px',
+                    borderRadius: '8px',
+                    padding: '16px',
                     border: '1px solid #E0E0E0',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.04)',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                     <div
                       style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '8px',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '6px',
                           background: '#E3F2FD',
                         display: 'flex',
                         alignItems: 'center',
@@ -368,11 +370,11 @@ const LostItemsPage = () => {
                           color: '#1976D2',
                       }}
                     >
-                      <FiPackage size={20} />
+                      <FiPackage size={18} />
                     </div>
                     <div
                       style={{
-                        fontSize: '12px',
+                        fontSize: '11px',
                         fontWeight: 500,
                         color: '#999999',
                       }}
@@ -382,7 +384,7 @@ const LostItemsPage = () => {
                   </div>
                   <div
                     style={{
-                      fontSize: '32px',
+                      fontSize: '28px',
                       fontWeight: 700,
                       color: '#000000',
                       lineHeight: 1,
@@ -397,19 +399,19 @@ const LostItemsPage = () => {
                 <div
                   style={{
                     background: '#FFFFFF',
-                    borderRadius: '12px',
-                    padding: '20px',
+                    borderRadius: '8px',
+                    padding: '16px',
                     border: '1px solid #E0E0E0',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.04)',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                     <div
                       style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '8px',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '6px',
                           background: '#FFF3E0',
                         display: 'flex',
                         alignItems: 'center',
@@ -417,11 +419,11 @@ const LostItemsPage = () => {
                           color: '#F57C00',
                       }}
                     >
-                      <FiClock size={20} />
+                      <FiClock size={18} />
                     </div>
                     <div
                       style={{
-                        fontSize: '12px',
+                        fontSize: '11px',
                         fontWeight: 500,
                         color: '#999999',
                       }}
@@ -431,7 +433,7 @@ const LostItemsPage = () => {
                   </div>
                   <div
                     style={{
-                      fontSize: '32px',
+                      fontSize: '28px',
                       fontWeight: 700,
                       color: '#000000',
                       lineHeight: 1,
@@ -446,19 +448,19 @@ const LostItemsPage = () => {
                 <div
                   style={{
                     background: '#FFFFFF',
-                    borderRadius: '12px',
-                    padding: '20px',
+                    borderRadius: '8px',
+                    padding: '16px',
                     border: '1px solid #E0E0E0',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.04)',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                     <div
                       style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '8px',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '6px',
                           background: '#E8F5E9',
                         display: 'flex',
                         alignItems: 'center',
@@ -466,11 +468,11 @@ const LostItemsPage = () => {
                           color: '#388E3C',
                       }}
                     >
-                      <FiCheckCircle size={20} />
+                      <FiCheckCircle size={18} />
                     </div>
                     <div
                       style={{
-                        fontSize: '12px',
+                        fontSize: '11px',
                         fontWeight: 500,
                         color: '#999999',
                       }}
@@ -480,7 +482,7 @@ const LostItemsPage = () => {
                   </div>
                   <div
                     style={{
-                      fontSize: '32px',
+                      fontSize: '28px',
                       fontWeight: 700,
                       color: '#000000',
                       lineHeight: 1,
@@ -495,19 +497,19 @@ const LostItemsPage = () => {
                 <div
                   style={{
                     background: '#FFFFFF',
-                    borderRadius: '12px',
-                    padding: '20px',
+                    borderRadius: '8px',
+                    padding: '16px',
                     border: '1px solid #E0E0E0',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.04)',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                     <div
                       style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '8px',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '6px',
                           background: '#FFEBEE',
                         display: 'flex',
                         alignItems: 'center',
@@ -515,11 +517,11 @@ const LostItemsPage = () => {
                           color: '#D32F2F',
                       }}
                     >
-                      <FiXCircle size={20} />
+                      <FiXCircle size={18} />
                     </div>
                     <div
                       style={{
-                        fontSize: '12px',
+                        fontSize: '11px',
                         fontWeight: 500,
                         color: '#999999',
                       }}
@@ -529,7 +531,7 @@ const LostItemsPage = () => {
                   </div>
                   <div
                     style={{
-                      fontSize: '32px',
+                      fontSize: '28px',
                       fontWeight: 700,
                       color: '#000000',
                       lineHeight: 1,
@@ -545,47 +547,47 @@ const LostItemsPage = () => {
                   <div
                     style={{
                       background: '#FFFFFF',
-                      borderRadius: '12px',
-                      padding: '20px',
+                      borderRadius: '8px',
+                      padding: '16px',
                       border: '1px solid #E0E0E0',
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.04)',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                        <div
-                          style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '8px',
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                      <div
+                        style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '6px',
                             background: '#E0F2F1',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                             color: '#00796B',
-                          }}
-                        >
-                          <FiTrendingUp size={20} />
-                        </div>
-                        <div
-                          style={{
-                            fontSize: '12px',
-                            fontWeight: 500,
-                            color: '#999999',
-                          }}
-                        >
-                          Tỷ Lệ Tìm Lại
-                        </div>
+                        }}
+                      >
+                          <FiTrendingUp size={18} />
                       </div>
                       <div
                         style={{
-                          fontSize: '32px',
-                          fontWeight: 700,
-                          color: '#000000',
-                          lineHeight: 1,
+                            fontSize: '11px',
+                          fontWeight: 500,
+                          color: '#999999',
                         }}
                       >
-                        {stats.recoveryRate}%
+                        Tỷ Lệ Tìm Lại
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                          fontSize: '28px',
+                        fontWeight: 700,
+                        color: '#000000',
+                        lineHeight: 1,
+                      }}
+                    >
+                      {stats.recoveryRate}%
                       </div>
                     </div>
                   </div>
@@ -596,19 +598,19 @@ const LostItemsPage = () => {
                   <div
                     style={{
                       background: '#FFFFFF',
-                      borderRadius: '12px',
-                      padding: '20px',
+                      borderRadius: '8px',
+                      padding: '16px',
                       border: '1px solid #E0E0E0',
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.04)',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                       <div
                         style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '8px',
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '6px',
                             background: '#F3E5F5',
                           display: 'flex',
                           alignItems: 'center',
@@ -616,11 +618,11 @@ const LostItemsPage = () => {
                             color: '#7B1FA2',
                         }}
                       >
-                        <FiClock size={20} />
+                        <FiClock size={18} />
                       </div>
                       <div
                         style={{
-                          fontSize: '12px',
+                          fontSize: '11px',
                           fontWeight: 500,
                           color: '#999999',
                         }}
@@ -630,7 +632,7 @@ const LostItemsPage = () => {
                     </div>
                     <div
                       style={{
-                        fontSize: '32px',
+                        fontSize: '28px',
                         fontWeight: 700,
                         color: '#000000',
                         lineHeight: 1,
@@ -662,10 +664,10 @@ const LostItemsPage = () => {
             <div
               style={{
                 background: '#FFFFFF',
-                borderRadius: '16px',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                borderRadius: '12px',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
                 width: '100%',
-                maxWidth: '800px',
+                maxWidth: '700px',
                 maxHeight: '90vh',
                 overflow: 'hidden',
                 display: 'flex',
@@ -679,16 +681,16 @@ const LostItemsPage = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '24px 32px',
+                  padding: '20px 24px',
                   borderBottom: '1px solid #E0E0E0',
                 }}
               >
                 <h2
                   style={{
-                    fontSize: '24px',
-                    fontWeight: 700,
+                    fontSize: '20px',
+                    fontWeight: 600,
                     color: '#000000',
-                    letterSpacing: '-0.02em',
+                    letterSpacing: '-0.01em',
                     margin: 0,
                   }}
                 >
@@ -697,9 +699,9 @@ const LostItemsPage = () => {
                 <button
                   onClick={() => setShowForm(false)}
                   style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '6px',
                     border: '1px solid #E0E0E0',
                     background: '#FFFFFF',
                     color: '#333333',
@@ -718,14 +720,14 @@ const LostItemsPage = () => {
                     e.target.style.borderColor = '#E0E0E0';
                   }}
                 >
-                  <FiX size={18} />
+                  <FiX size={16} />
                 </button>
               </div>
 
               {/* Modal Body */}
               <div
                 style={{
-                  padding: '32px',
+                  padding: '24px',
                   overflowY: 'auto',
                   flex: 1,
                 }}
@@ -785,6 +787,7 @@ const LostItemsPage = () => {
                   }}
             onPageChange={setPage}
                   onItemDeleted={handleItemDeleted}
+                  onItemUpdated={handleItemUpdated}
           />
         )}
           </div>
